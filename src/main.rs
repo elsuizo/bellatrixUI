@@ -1,4 +1,5 @@
 mod bellatrix;
+mod utils;
 
 use eframe::{epi, epi::App, run_native, NativeOptions};
 
@@ -7,7 +8,7 @@ use std::{borrow::Cow, iter::FromIterator};
 use crate::bellatrix::Bellatrix;
 use eframe::egui::{
     self, Button, CentralPanel, Color32, Context, FontDefinitions, FontFamily, Hyperlink, Label,
-    Layout, RichText, ScrollArea, Separator, TextStyle, TopBottomPanel, Ui, Vec2,
+    Layout, RichText, ScrollArea, Separator, TextStyle, TopBottomPanel, Ui, Vec2, Visuals,
 };
 
 pub const PADDING: f32 = 5.0;
@@ -66,18 +67,12 @@ impl epi::App for Bellatrix {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
-        let Self {
-            private_key,
-            force_buy_percent,
-            force_sell_percent,
-            auto_swap,
-            logs,
-        } = self;
-
         // Examples of how to create different panels and windows.
         // Pick whichever suits you.
         // Tip: a good default choice is to just keep the `CentralPanel`.
         // For inspiration and more examples, go to https://emilk.github.io/egui
+
+        ctx.set_visuals(Visuals::dark());
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
@@ -96,7 +91,7 @@ impl epi::App for Bellatrix {
 
             ui.horizontal(|ui| {
                 ui.label("API KEY: ");
-                ui.text_edit_singleline(private_key);
+                ui.text_edit_singleline(&mut self.private_key);
 
                 if ui.button("Set API KEY").clicked() {
                     println!("dsfsdf");
@@ -107,7 +102,9 @@ impl epi::App for Bellatrix {
             ui.label("");
             ui.horizontal(|ui| {
                 ui.label("PrivateKey: ");
-                ui.text_edit_singleline(private_key);
+                // NOTE(elsuizo:2022-02-25): this should be not visible and only toggle when the
+                // user want
+                ui.add(utils::password(&mut self.private_key));
 
                 if ui.button("Load account").clicked() {
                     println!("dsfsdf");
@@ -117,7 +114,7 @@ impl epi::App for Bellatrix {
 
             ui.horizontal(|ui| {
                 ui.label("Contract: ");
-                ui.text_edit_singleline(private_key);
+                ui.text_edit_singleline(&mut self.private_key);
 
                 if ui.button("Set Contract").clicked() {
                     println!("dsfsdf");
@@ -128,7 +125,7 @@ impl epi::App for Bellatrix {
             ui.label("");
             ui.horizontal(|ui| {
                 ui.label("Swap From: ");
-                ui.text_edit_singleline(private_key);
+                ui.text_edit_singleline(&mut self.private_key);
 
                 if ui.button("Set Contract").clicked() {
                     println!("dsfsdf");
@@ -137,7 +134,7 @@ impl epi::App for Bellatrix {
             });
             ui.horizontal(|ui| {
                 ui.label("Swap To: ");
-                ui.text_edit_singleline(private_key);
+                ui.text_edit_singleline(&mut self.private_key);
 
                 if ui.button("Set Contract").clicked() {
                     println!("dsfsdf");
@@ -145,6 +142,7 @@ impl epi::App for Bellatrix {
                 }
             });
 
+            // TODO(elsuizo:2022-02-25): remove all the empty labels like this
             // These are equivalent:
             ui.label("");
             ui.heading("Swap configuration");
@@ -152,17 +150,18 @@ impl epi::App for Bellatrix {
             // BUY
             ui.label("");
             ui.horizontal(|ui| {
-                ui.checkbox(auto_swap, "Enable Auto Swap");
+                ui.checkbox(&mut self.auto_swap, "Enable Auto Swap");
             });
 
             ui.horizontal(|ui| {
                 ui.label("BUY");
-                ui.add(egui::Slider::new(force_buy_percent, 0.0..=100.0));
+                ui.add(egui::Slider::new(&mut self.force_buy_percent, 0.0..=100.0));
                 ui.label("%");
                 if ui.button("Force Buy").clicked() {
-                    *force_buy_percent += 1.0;
+                    self.force_buy_percent += 1.0;
                 }
 
+                // TODO(elsuizo:2022-02-25): remove all the "\t" like this
                 ui.label("\t\t");
 
                 ui.horizontal(|ui| {
@@ -170,10 +169,11 @@ impl epi::App for Bellatrix {
                     ui.label("");
                 });
 
-                ui.add(egui::Slider::new(force_sell_percent, 0.0..=100.0));
+                // TODO(elsuizo:2022-02-25): maybe this is not necessary to be float
+                ui.add(egui::Slider::new(&mut self.force_sell_percent, 0.0..=100.0));
                 ui.label("%");
                 if ui.button("Force Sell").clicked() {
-                    *force_sell_percent += 1.0;
+                    self.force_sell_percent += 1.0;
                 }
             });
 
