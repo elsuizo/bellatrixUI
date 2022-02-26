@@ -1,12 +1,6 @@
 use crate::utils;
-use eframe::egui::{
-    self, Button, Color32, Context, FontData, FontDefinitions, FontFamily, Hyperlink, Label,
-    Layout, Separator, TextStyle, TopBottomPanel, Ui, WidgetType,
-};
-// use std::borrow::Cow;
-use std::iter::FromIterator;
+use eframe::egui::{self, Color32, Hyperlink, Layout};
 
-pub const PADDING: f32 = 5.0;
 const WHITE: Color32 = Color32::from_rgb(255, 255, 255);
 const CYAN: Color32 = Color32::from_rgb(0, 255, 255);
 
@@ -80,34 +74,34 @@ impl Bellatrix {
                 println!("dsfsdf");
                 // println!("{:?}", chrono::offset::Local::now());
             }
-            // let password_input = utils::password_ui(ui, &mut self.private_key);
         });
         ui.add_space(Self::INTERNAL_SPACE);
         ui.horizontal(|ui| {
             ui.label("To(Address):");
             // TODO(elsuizo:2022-02-25): validate the address
             let address_input = ui.text_edit_singleline(&mut self.address);
+            // TODO(elsuizo:2022-02-26): maybe here we need change all the button color
+            ui.visuals_mut().override_text_color = Some(egui::Color32::RED);
             if ui.button("Scam").clicked() {
                 println!("dsfsdf");
                 // println!("{:?}", chrono::offset::Local::now());
             }
-            // let password_input = utils::password_ui(ui, &mut self.private_key);
         });
         ui.add_space(Self::INTERNAL_SPACE);
         ui.separator();
     }
 
     pub fn render_new_log(&self, ui: &mut eframe::egui::Ui) {
-        for a in &self.logs {
+        for element in &self.logs {
             ui.horizontal(|ui| {
-                let title = format!("{}: {}", a.date, "Buy 12323 TKM - 0.23 BNB");
+                let title = format!("{}: {}", element.date, "Buy 12323 TKM - 0.23 BNB");
                 ui.colored_label(WHITE, title);
 
                 ui.style_mut().visuals.hyperlink_color = CYAN;
-                ui.add_space(PADDING);
+                // ui.add_space(PADDING);
                 ui.with_layout(Layout::right_to_left(), |ui| {
                     ui.add(Hyperlink::from_label_and_url(
-                        &a.text,
+                        &element.text,
                         "See Tx On Explorer ⤴",
                     ));
                 });

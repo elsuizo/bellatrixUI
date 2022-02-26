@@ -1,14 +1,12 @@
 mod bellatrix;
 mod utils;
 
-use eframe::{epi, epi::App, run_native, NativeOptions};
-
-use std::{borrow::Cow, iter::FromIterator};
+use eframe::epi;
 
 use crate::bellatrix::Bellatrix;
 use eframe::egui::{
-    self, Button, CentralPanel, Color32, Context, FontDefinitions, FontFamily, Hyperlink, Label,
-    Layout, RichText, ScrollArea, Separator, TextStyle, TopBottomPanel, Ui, Vec2, Visuals,
+    self, Color32, Context, Hyperlink, Label, RichText, Separator, TextStyle, TopBottomPanel, Ui,
+    Visuals,
 };
 
 pub const PADDING: f32 = 5.0;
@@ -64,16 +62,11 @@ fn render_header(ui: &mut Ui) {
 }
 
 impl epi::App for Bellatrix {
-    /// Called each time the UI needs repainting, which may be many times per second.
-    /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
-        // Examples of how to create different panels and windows.
-        // Pick whichever suits you.
-        // Tip: a good default choice is to just keep the `CentralPanel`.
-        // For inspiration and more examples, go to https://emilk.github.io/egui
-
+        // enable dark mode
         ctx.set_visuals(Visuals::dark());
 
+        // TODO(elsuizo:2022-02-26): add more Options for this panel
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
             egui::menu::bar(ui, |ui| {
@@ -139,13 +132,10 @@ impl epi::App for Bellatrix {
                 ui.label("2022/02/06 02:39:16:  dsfsdf sdfs df sdfsdfsd dssdf sdf: ");
             });
 
-            //ui.label(l);
-
             egui::warn_if_debug_build(ui);
         });
     }
 
-    /// Called once before the first frame.
     fn setup(
         &mut self,
         _ctx: &egui::Context,
@@ -160,15 +150,13 @@ impl epi::App for Bellatrix {
         }
     }
 
-    /// Called by the frame work to save state before shutdown.
-    /// Note that you must enable the `persistence` feature for this to work.
     #[cfg(feature = "persistence")]
     fn save(&mut self, storage: &mut dyn epi::Storage) {
         epi::set_value(storage, epi::APP_KEY, self);
     }
 
     fn name(&self) -> &str {
-        "eframe template"
+        "BellatrixUI app"
     }
 }
 
