@@ -89,58 +89,9 @@ impl epi::App for Bellatrix {
             render_header(ui);
             render_footer(ctx);
 
-            ui.horizontal(|ui| {
-                ui.label("API KEY: ");
-                ui.text_edit_singleline(&mut self.private_key);
+            self.render_wallet(ui);
 
-                if ui.button("Set API KEY").clicked() {
-                    println!("dsfsdf");
-                    println!("{:?}", chrono::offset::Local::now());
-                }
-            });
-
-            ui.label("");
-            ui.horizontal(|ui| {
-                ui.label("PrivateKey: ");
-                // NOTE(elsuizo:2022-02-25): this should be not visible and only toggle when the
-                // user want
-                ui.add(utils::password(&mut self.private_key));
-
-                if ui.button("Load account").clicked() {
-                    println!("dsfsdf");
-                    println!("{:?}", chrono::offset::Local::now());
-                }
-            });
-
-            ui.horizontal(|ui| {
-                ui.label("Contract: ");
-                ui.text_edit_singleline(&mut self.private_key);
-
-                if ui.button("Set Contract").clicked() {
-                    println!("dsfsdf");
-                    println!("{:?}", chrono::offset::Local::now());
-                }
-            });
-
-            ui.label("");
-            ui.horizontal(|ui| {
-                ui.label("Swap From: ");
-                ui.text_edit_singleline(&mut self.private_key);
-
-                if ui.button("Set Contract").clicked() {
-                    println!("dsfsdf");
-                    println!("{:?}", chrono::offset::Local::now());
-                }
-            });
-            ui.horizontal(|ui| {
-                ui.label("Swap To: ");
-                ui.text_edit_singleline(&mut self.private_key);
-
-                if ui.button("Set Contract").clicked() {
-                    println!("dsfsdf");
-                    println!("{:?}", chrono::offset::Local::now());
-                }
-            });
+            self.render_addres(ui);
 
             // TODO(elsuizo:2022-02-25): remove all the empty labels like this
             // These are equivalent:
