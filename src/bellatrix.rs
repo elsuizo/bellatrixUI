@@ -31,6 +31,7 @@ pub struct Bellatrix {
 
 impl Bellatrix {
     const INTERNAL_SPACE: f32 = 5.0;
+    const WINDOWS_SIGNAL_COLOR: Color32 = Color32::from_rgb(255, 140, 0);
 
     pub fn new() -> Bellatrix {
         let iter = (0..20).map(|a| BotLog {
@@ -53,13 +54,16 @@ impl Bellatrix {
         ui.horizontal(|ui| {
             ui.label("Address:");
             // TODO(elsuizo:2022-02-25): validate the input
-            let address_input = ui.text_edit_singleline(&mut self.address);
+            let address_input = ui
+                .text_edit_singleline(&mut self.address)
+                .on_hover_text("write the address here");
         });
         ui.add_space(Self::INTERNAL_SPACE);
         ui.horizontal(|ui| {
             ui.label("PrivateKey: ");
             // TODO(elsuizo:2022-02-25): validate the password
-            let password_input = utils::password_ui(ui, &mut self.private_key);
+            let password_input = utils::password_ui(ui, &mut self.private_key)
+                .on_hover_text("write the private key here");
         });
         ui.add_space(Self::INTERNAL_SPACE);
         ui.separator();
@@ -79,9 +83,12 @@ impl Bellatrix {
         ui.horizontal(|ui| {
             ui.label("To(Address):");
             // TODO(elsuizo:2022-02-25): validate the address
-            let address_input = ui.text_edit_singleline(&mut self.address);
-            // TODO(elsuizo:2022-02-26): maybe here we need change all the button color
-            ui.visuals_mut().override_text_color = Some(egui::Color32::RED);
+            let address_input = ui
+                .text_edit_singleline(&mut self.address)
+                .on_hover_text("write the address here");
+            // TODO(elsuizo:2022-02-26): if orange color(Windows) / Scam(Macbook) is a signal check
+            // before buying
+            ui.visuals_mut().override_text_color = Some(Self::WINDOWS_SIGNAL_COLOR);
             if ui.button("Scam").clicked() {
                 println!("dsfsdf");
                 // println!("{:?}", chrono::offset::Local::now());
@@ -97,29 +104,30 @@ impl Bellatrix {
             // space between coloumns/rows
             // .spacing([30.0, 10.0])
             // this put a shadow in each row form
-            // .striped(true)
+            .striped(true)
             // NOTE(elsuizo:2022-02-27): the name is important to mantain the Layout
             .show(ui, |ui| {
                 egui::Grid::new("internal_grid")
                     .num_columns(2)
                     .show(ui, |ui| {
-                        ui.add(
-                            egui::TextEdit::singleline(&mut self.address)
-                                .hint_text("Write something here1"),
-                        );
-                        ui.add(
-                            egui::TextEdit::singleline(&mut self.address)
-                                .hint_text("Write something here2"),
-                        );
+                        if ui.button("BNB Balance").clicked() {
+                            println!("dsfsdf");
+                            // println!("{:?}", chrono::offset::Local::now());
+                        }
+                        ui.label("9.68");
                         ui.end_row();
-                        ui.add(
-                            egui::TextEdit::singleline(&mut self.address)
-                                .hint_text("Write something here3"),
-                        );
-                        ui.add(
-                            egui::TextEdit::singleline(&mut self.address)
-                                .hint_text("Write something here4"),
-                        );
+                        if ui.button("BNB Spend").clicked() {
+                            println!("dsfsdf");
+                            // println!("{:?}", chrono::offset::Local::now());
+                        }
+                        ui.label("2.0");
+                        ui.end_row();
+                        ui.label("Set gas limit");
+                        if ui.button("BNB Spend").clicked() {
+                            println!("dsfsdf");
+                            // println!("{:?}", chrono::offset::Local::now());
+                        }
+                        ui.end_row();
                     });
                 // NOTE(elsuizo:2022-02-27): the name is important to mantain the Layout
                 egui::Grid::new("internal_grid")
