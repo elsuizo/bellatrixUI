@@ -4,6 +4,32 @@ use eframe::egui::{self, Color32, Hyperlink, Layout};
 const WHITE: Color32 = Color32::from_rgb(255, 255, 255);
 const CYAN: Color32 = Color32::from_rgb(0, 255, 255);
 
+#[derive(PartialEq, Debug)]
+pub enum TokenPool {
+    BNB,
+    BUSD,
+    USDT,
+    USDC,
+}
+
+impl Default for TokenPool {
+    fn default() -> Self {
+        Self::BNB
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub enum BNBElection {
+    Spend,
+    Buy,
+}
+
+impl Default for BNBElection {
+    fn default() -> Self {
+        Self::Spend
+    }
+}
+
 pub struct BotLog {
     date: String,
     text: String,
@@ -17,6 +43,12 @@ pub struct Bellatrix {
     pub private_key: String,
 
     pub address: String,
+
+    pub bnb_election: BNBElection,
+
+    pub user_money: f32,
+
+    pub token_pool: TokenPool,
 
     // this how you opt-out of serialization of a member
     #[cfg_attr(feature = "persistence", serde(skip))]
@@ -42,6 +74,9 @@ impl Bellatrix {
         Bellatrix {
             logs: Vec::from_iter(iter),
             address: String::new(),
+            bnb_election: BNBElection::Spend,
+            user_money: 0.0,
+            token_pool: TokenPool::BNB,
             private_key: String::new(),
             force_buy_percent: 0.0,
             force_sell_percent: 0.0,
@@ -109,6 +144,7 @@ impl Bellatrix {
             .show(ui, |ui| {
                 egui::Grid::new("internal_grid")
                     .num_columns(2)
+                    .spacing([3.0, 7.0])
                     .show(ui, |ui| {
                         if ui.button("BNB Balance").clicked() {
                             println!("dsfsdf");
@@ -116,17 +152,45 @@ impl Bellatrix {
                         }
                         ui.label("9.68");
                         ui.end_row();
-                        if ui.button("BNB Spend").clicked() {
-                            println!("dsfsdf");
-                            // println!("{:?}", chrono::offset::Local::now());
-                        }
-                        ui.label("2.0");
+                        egui::ComboBox::from_label("Select one!")
+                            .selected_text(format!("{:?}", self.bnb_election))
+                            .show_ui(ui, |ui| {
+                                ui.selectable_value(
+                                    &mut self.bnb_election,
+                                    BNBElection::Spend,
+                                    "Spend",
+                                );
+                                ui.selectable_value(
+                                    &mut self.bnb_election,
+                                    BNBElection::Buy,
+                                    "Buy",
+                                );
+                            });
+                        // TODO(elsuizo:2022-02-28): maybe here its not a good idea have a
+                        // slider...
+                        ui.add(egui::Slider::new(&mut self.user_money, 0f32..=1000.0).suffix("$"));
                         ui.end_row();
                         ui.label("Set gas limit");
-                        if ui.button("BNB Spend").clicked() {
-                            println!("dsfsdf");
-                            // println!("{:?}", chrono::offset::Local::now());
-                        }
+                        ui.add(
+                            egui::TextEdit::singleline(&mut self.address)
+                                .hint_text("The gas you want to set"),
+                        );
+                        ui.end_row();
+                        ui.label("Set gas price");
+                        ui.add(
+                            egui::TextEdit::singleline(&mut self.address)
+                                .hint_text("The GWEI you want to set"),
+                        );
+                        ui.end_row();
+                        ui.label("Set token Pair");
+                        egui::ComboBox::from_label("Select the Pool!")
+                            .selected_text(format!("{:?}", self.token_pool))
+                            .show_ui(ui, |ui| {
+                                ui.selectable_value(&mut self.token_pool, TokenPool::BNB, "BNB");
+                                ui.selectable_value(&mut self.token_pool, TokenPool::BUSD, "BUSD");
+                                ui.selectable_value(&mut self.token_pool, TokenPool::USDT, "USDT");
+                                ui.selectable_value(&mut self.token_pool, TokenPool::USDC, "USDC");
+                            });
                         ui.end_row();
                     });
                 // NOTE(elsuizo:2022-02-27): the name is important to mantain the Layout
