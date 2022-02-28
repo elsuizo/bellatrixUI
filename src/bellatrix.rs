@@ -91,6 +91,63 @@ impl Bellatrix {
         ui.separator();
     }
 
+    pub fn render_middle_section(&mut self, ui: &mut eframe::egui::Ui) {
+        egui::Grid::new("outer_grid")
+            .num_columns(3)
+            // space between coloumns/rows
+            // .spacing([30.0, 10.0])
+            // this put a shadow in each row form
+            // .striped(true)
+            // NOTE(elsuizo:2022-02-27): the name is important to mantain the Layout
+            .show(ui, |ui| {
+                egui::Grid::new("internal_grid")
+                    .num_columns(2)
+                    .show(ui, |ui| {
+                        ui.add(
+                            egui::TextEdit::singleline(&mut self.address)
+                                .hint_text("Write something here1"),
+                        );
+                        ui.add(
+                            egui::TextEdit::singleline(&mut self.address)
+                                .hint_text("Write something here2"),
+                        );
+                        ui.end_row();
+                        ui.add(
+                            egui::TextEdit::singleline(&mut self.address)
+                                .hint_text("Write something here3"),
+                        );
+                        ui.add(
+                            egui::TextEdit::singleline(&mut self.address)
+                                .hint_text("Write something here4"),
+                        );
+                    });
+                // NOTE(elsuizo:2022-02-27): the name is important to mantain the Layout
+                egui::Grid::new("internal_grid")
+                    .num_columns(1)
+                    .show(ui, |ui| {
+                        ui.add(
+                            egui::TextEdit::singleline(&mut self.address)
+                                .hint_text("Write something here5"),
+                        );
+                        ui.end_row();
+                        ui.add(
+                            egui::TextEdit::singleline(&mut self.address)
+                                .hint_text("Write something here6"),
+                        );
+                        ui.end_row();
+                        ui.add(
+                            egui::TextEdit::singleline(&mut self.address)
+                                .hint_text("Write something here7"),
+                        );
+                        ui.end_row();
+                        ui.add(
+                            egui::TextEdit::singleline(&mut self.address)
+                                .hint_text("Write something here7"),
+                        );
+                    });
+            });
+    }
+
     pub fn render_new_log(&self, ui: &mut eframe::egui::Ui) {
         for element in &self.logs {
             ui.horizontal(|ui| {

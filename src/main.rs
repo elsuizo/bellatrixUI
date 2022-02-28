@@ -86,6 +86,8 @@ impl epi::App for Bellatrix {
 
             self.render_addres(ui);
 
+            self.render_middle_section(ui);
+
             // TODO(elsuizo:2022-02-25): remove all the empty labels like this
             // These are equivalent:
             ui.label("");
