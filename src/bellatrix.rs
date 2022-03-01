@@ -1,8 +1,7 @@
 use crate::utils;
+use crate::CYAN;
+use crate::WHITE;
 use eframe::egui::{self, Color32, Hyperlink, Layout};
-
-const WHITE: Color32 = Color32::from_rgb(255, 255, 255);
-const CYAN: Color32 = Color32::from_rgb(0, 255, 255);
 
 #[derive(PartialEq, Debug)]
 pub enum TokenPool {
@@ -115,6 +114,7 @@ impl Bellatrix {
             }
         });
         ui.add_space(Self::INTERNAL_SPACE);
+
         ui.horizontal(|ui| {
             ui.label("To(Address):");
             // TODO(elsuizo:2022-02-25): validate the address
@@ -130,12 +130,13 @@ impl Bellatrix {
             }
         });
         ui.add_space(Self::INTERNAL_SPACE);
+
         ui.separator();
     }
 
     pub fn render_middle_section(&mut self, ui: &mut eframe::egui::Ui) {
         egui::Grid::new("outer_grid")
-            .num_columns(3)
+            .num_columns(2)
             // space between coloumns/rows
             // .spacing([30.0, 10.0])
             // this put a shadow in each row form
@@ -144,7 +145,7 @@ impl Bellatrix {
             .show(ui, |ui| {
                 egui::Grid::new("internal_grid")
                     .num_columns(2)
-                    .spacing([3.0, 7.0])
+                    .spacing([2.0, Self::INTERNAL_SPACE])
                     .show(ui, |ui| {
                         if ui.button("BNB Balance").clicked() {
                             println!("dsfsdf");
@@ -197,27 +198,36 @@ impl Bellatrix {
                 egui::Grid::new("internal_grid")
                     .num_columns(1)
                     .show(ui, |ui| {
-                        ui.add(
-                            egui::TextEdit::singleline(&mut self.address)
-                                .hint_text("Write something here5"),
-                        );
+                        ui.heading("Swap configuration");
                         ui.end_row();
-                        ui.add(
-                            egui::TextEdit::singleline(&mut self.address)
-                                .hint_text("Write something here6"),
-                        );
+                        ui.checkbox(&mut self.auto_swap, "Enable Auto Swap");
                         ui.end_row();
-                        ui.add(
-                            egui::TextEdit::singleline(&mut self.address)
-                                .hint_text("Write something here7"),
-                        );
+                        ui.horizontal(|ui| {
+                            ui.label("BUY");
+                            ui.add(
+                                egui::Slider::new(&mut self.force_buy_percent, 0.0..=100.0)
+                                    .suffix("%"),
+                            );
+                            if ui.button("Force Buy").clicked() {
+                                self.force_buy_percent += 1.0;
+                            }
+                        });
                         ui.end_row();
-                        ui.add(
-                            egui::TextEdit::singleline(&mut self.address)
-                                .hint_text("Write something here7"),
-                        );
+                        ui.horizontal(|ui| {
+                            ui.label("Sell");
+                            ui.add(
+                                egui::Slider::new(&mut self.force_sell_percent, 0.0..=100.0)
+                                    .suffix("%"),
+                            );
+                            if ui.button("Force Sell").clicked() {
+                                self.force_sell_percent += 1.0;
+                            }
+                        });
                     });
             });
+
+        ui.add_space(Self::INTERNAL_SPACE);
+        ui.separator();
     }
 
     pub fn render_new_log(&self, ui: &mut eframe::egui::Ui) {

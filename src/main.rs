@@ -80,6 +80,7 @@ impl epi::App for Bellatrix {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             render_header(ui);
+
             render_footer(ctx);
 
             self.render_wallet(ui);
@@ -87,43 +88,6 @@ impl epi::App for Bellatrix {
             self.render_addres(ui);
 
             self.render_middle_section(ui);
-
-            // TODO(elsuizo:2022-02-25): remove all the empty labels like this
-            // These are equivalent:
-            ui.label("");
-            ui.heading("Swap configuration");
-
-            // BUY
-            ui.label("");
-            ui.horizontal(|ui| {
-                ui.checkbox(&mut self.auto_swap, "Enable Auto Swap");
-            });
-
-            ui.horizontal(|ui| {
-                ui.label("BUY");
-                ui.add(egui::Slider::new(&mut self.force_buy_percent, 0.0..=100.0));
-                ui.label("%");
-                if ui.button("Force Buy").clicked() {
-                    self.force_buy_percent += 1.0;
-                }
-
-                // TODO(elsuizo:2022-02-25): remove all the "\t" like this
-                ui.label("\t\t");
-
-                ui.horizontal(|ui| {
-                    ui.label("SELL");
-                    ui.label("");
-                });
-
-                // TODO(elsuizo:2022-02-25): maybe this is not necessary to be float
-                ui.add(egui::Slider::new(&mut self.force_sell_percent, 0.0..=100.0));
-                ui.label("%");
-                if ui.button("Force Sell").clicked() {
-                    self.force_sell_percent += 1.0;
-                }
-            });
-
-            ui.label("");
 
             ui.heading("Log: ");
             ui.vertical(|ui| {
