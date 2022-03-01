@@ -84,7 +84,7 @@ impl Bellatrix {
     }
 
     /// render the wallet section
-    pub fn render_wallet(&mut self, ui: &mut eframe::egui::Ui) {
+    pub fn render_wallet_section(&mut self, ui: &mut eframe::egui::Ui) {
         ui.horizontal(|ui| {
             ui.label("Address:");
             // TODO(elsuizo:2022-02-25): validate the input
@@ -103,7 +103,7 @@ impl Bellatrix {
         ui.separator();
     }
 
-    pub fn render_addres(&mut self, ui: &mut eframe::egui::Ui) {
+    pub fn render_addres_section(&mut self, ui: &mut eframe::egui::Ui) {
         ui.horizontal(|ui| {
             ui.label("From(Address):");
             // TODO(elsuizo:2022-02-25): validate the address
@@ -197,6 +197,7 @@ impl Bellatrix {
                 // NOTE(elsuizo:2022-02-27): the name is important to mantain the Layout
                 egui::Grid::new("internal_grid")
                     .num_columns(1)
+                    .spacing([2.0, Self::INTERNAL_SPACE + 3.0])
                     .show(ui, |ui| {
                         ui.heading("Swap configuration");
                         ui.end_row();
@@ -229,6 +230,8 @@ impl Bellatrix {
         ui.add_space(Self::INTERNAL_SPACE);
         ui.separator();
     }
+
+    pub fn render_token_wallet_section(&mut self, ui: &mut eframe::egui::Ui) {}
 
     pub fn render_new_log(&self, ui: &mut eframe::egui::Ui) {
         for element in &self.logs {

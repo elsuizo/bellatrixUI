@@ -83,9 +83,9 @@ impl epi::App for Bellatrix {
 
             render_footer(ctx);
 
-            self.render_wallet(ui);
+            self.render_wallet_section(ui);
 
-            self.render_addres(ui);
+            self.render_addres_section(ui);
 
             self.render_middle_section(ui);
 
