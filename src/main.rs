@@ -89,14 +89,17 @@ impl epi::App for Bellatrix {
 
             self.render_middle_section(ui);
 
-            ui.heading("Log: ");
-            ui.vertical(|ui| {
-                ui.label("2022/02/06 02:39:16:  dsfsdf sdfs df sdfsdfsd dsf  sdf");
-                ui.label("2022/02/06 02:39:16:  dsfsdf sdfs df sdfsdfs  sdf");
-                ui.label("2022/02/06 02:39:16:  dsfsdf sdfs df sdfsdfsd");
-                ui.label("2022/02/06 02:39:16:  dsfsdf sdfs df sdfsdfsd dsdsfsdff  sdf: ");
-                ui.label("2022/02/06 02:39:16:  dsfsdf sdfs df sdfsdfsd dssdf sdf: ");
-            });
+            self.render_token_wallet_section(ui);
+
+            self.render_tracking_information_section(ui);
+            // ui.heading("Log: ");
+            // ui.vertical(|ui| {
+            //     ui.label("2022/02/06 02:39:16:  dsfsdf sdfs df sdfsdfsd dsf  sdf");
+            //     ui.label("2022/02/06 02:39:16:  dsfsdf sdfs df sdfsdfs  sdf");
+            //     ui.label("2022/02/06 02:39:16:  dsfsdf sdfs df sdfsdfsd");
+            //     ui.label("2022/02/06 02:39:16:  dsfsdf sdfs df sdfsdfsd dsdsfsdff  sdf: ");
+            //     ui.label("2022/02/06 02:39:16:  dsfsdf sdfs df sdfsdfsd dssdf sdf: ");
+            // });
 
             egui::warn_if_debug_build(ui);
         });
