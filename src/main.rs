@@ -30,7 +30,8 @@ fn render_monospaced_label(ui: &mut Ui, text: &str) {
         RichText::new(text)
             .color(WHITE)
             .heading()
-            .text_style(TextStyle::Monospace),
+            .text_style(TextStyle::Monospace)
+            .size(30.0),
     ));
 }
 
@@ -63,9 +64,6 @@ fn render_header(ui: &mut Ui) {
 
 impl epi::App for Bellatrix {
     fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
-        // enable dark mode
-        ctx.set_visuals(Visuals::dark());
-
         // TODO(elsuizo:2022-02-26): add more Options for this panel
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
@@ -92,14 +90,6 @@ impl epi::App for Bellatrix {
             self.render_token_wallet_section(ui);
 
             self.render_tracking_information_section(ui);
-            // ui.heading("Log: ");
-            // ui.vertical(|ui| {
-            //     ui.label("2022/02/06 02:39:16:  dsfsdf sdfs df sdfsdfsd dsf  sdf");
-            //     ui.label("2022/02/06 02:39:16:  dsfsdf sdfs df sdfsdfs  sdf");
-            //     ui.label("2022/02/06 02:39:16:  dsfsdf sdfs df sdfsdfsd");
-            //     ui.label("2022/02/06 02:39:16:  dsfsdf sdfs df sdfsdfsd dsdsfsdff  sdf: ");
-            //     ui.label("2022/02/06 02:39:16:  dsfsdf sdfs df sdfsdfsd dssdf sdf: ");
-            // });
 
             egui::warn_if_debug_build(ui);
         });
@@ -107,12 +97,16 @@ impl epi::App for Bellatrix {
 
     fn setup(
         &mut self,
-        _ctx: &egui::Context,
+        ctx: &egui::Context,
         _frame: &epi::Frame,
         _storage: Option<&dyn epi::Storage>,
     ) {
-        // Load previous app state (if any).
-        // Note that you must enable the `persistence` feature for this to work.
+        // enable dark mode
+        ctx.set_visuals(Visuals::dark());
+
+        self.configure_fonts(ctx);
+
+        // TODO(elsuizo:2022-03-04): parece que esto no anda ...
         #[cfg(feature = "persistence")]
         if let Some(storage) = _storage {
             *self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default()

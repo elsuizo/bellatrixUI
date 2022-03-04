@@ -1,7 +1,10 @@
+use crate::egui::{
+    self, Color32, Context, FontData, FontDefinitions, FontFamily, Hyperlink, Layout, TextStyle,
+};
 use crate::utils;
 use crate::CYAN;
 use crate::WHITE;
-use eframe::egui::{self, Color32, Hyperlink, Layout};
+use std::borrow::Cow;
 
 #[derive(PartialEq, Debug)]
 pub enum TokenPool {
@@ -83,8 +86,35 @@ pub struct Bellatrix {
 }
 
 impl Bellatrix {
+    //-------------------------------------------------------------------------
+    //                        type constants
+    //-------------------------------------------------------------------------
     const INTERNAL_SPACE: f32 = 5.0;
+    const ROWS_SPACE: f32 = 10.0;
+    const COLUMNS_SPACE: f32 = 10.0;
     const WINDOWS_SIGNAL_COLOR: Color32 = Color32::from_rgb(255, 140, 0);
+
+    pub fn configure_fonts(&mut self, ctx: &Context) {
+        let mut font_definitions = FontDefinitions::default();
+        font_definitions.font_data.insert(
+            "MesloLGS".to_string(),
+            FontData::from_static(include_bytes!("../MesloLGS_NF_Regular.ttf")),
+        );
+        // TODO(elsuizo:2022-03-04): esto no anda en esta version de eframe
+        // font_definitions
+        //     .families
+        //     .insert(TextStyle::Heading, (FontFamily::Proportional, 35.0));
+        // font_definitions
+        //     .families
+        //     .insert(TextStyle::Body, (FontFamily::Proportional, 20.0));
+        font_definitions
+            .families
+            .get_mut(&FontFamily::Monospace)
+            .unwrap()
+            .insert(0, "MesloLGS".to_string());
+
+        ctx.set_fonts(font_definitions);
+    }
 
     pub fn new() -> Bellatrix {
         let iter = (0..20).map(|a| BotLog {
@@ -168,14 +198,14 @@ impl Bellatrix {
         egui::Grid::new("outer_grid")
             .num_columns(2)
             // space between coloumns/rows
-            // .spacing([30.0, 10.0])
+            .spacing([Self::ROWS_SPACE, Self::COLUMNS_SPACE])
             // this put a shadow in each row form
             .striped(true)
             // NOTE(elsuizo:2022-02-27): the name is important to mantain the Layout
             .show(ui, |ui| {
                 egui::Grid::new("internal_grid")
                     .num_columns(2)
-                    .spacing([2.0, Self::INTERNAL_SPACE])
+                    .spacing([Self::ROWS_SPACE, Self::COLUMNS_SPACE])
                     .show(ui, |ui| {
                         if ui.button("BNB Balance").clicked() {
                             println!("check balance");
@@ -198,7 +228,11 @@ impl Bellatrix {
                             });
                         // TODO(elsuizo:2022-02-28): maybe here its not a good idea have a
                         // slider...
-                        ui.add(egui::Slider::new(&mut self.user_money, 0f32..=1000.0).suffix("$"));
+                        ui.add(
+                            egui::Slider::new(&mut self.user_money, 0f32..=1000.0)
+                                .text("put text here")
+                                .suffix("$"),
+                        );
                         ui.end_row();
                         ui.label("Set gas limit");
                         ui.add(
@@ -224,9 +258,9 @@ impl Bellatrix {
                         ui.end_row();
                     });
                 // NOTE(elsuizo:2022-02-27): the name is important to mantain the Layout
-                egui::Grid::new("internal_grid")
+                egui::Grid::new("internal_grid1")
                     .num_columns(1)
-                    .spacing([2.0, Self::INTERNAL_SPACE + 3.0])
+                    .spacing([Self::ROWS_SPACE, Self::COLUMNS_SPACE])
                     .show(ui, |ui| {
                         ui.heading("Swap configuration");
                         ui.end_row();
@@ -325,7 +359,7 @@ impl Bellatrix {
         ui.horizontal(|ui| {
             // TODO(elsuizo:2022-02-25): validate the address
             let address_input = ui.text_edit_singleline(&mut self.address);
-            if ui.button("⎆ ").clicked() {
+            if ui.button(" ⎆ ").clicked() {
                 println!("Check output transaction and warning users");
             }
         });
