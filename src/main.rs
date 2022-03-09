@@ -1,12 +1,11 @@
 mod bellatrix;
 mod utils;
-
 use eframe::epi;
 
 use crate::bellatrix::Bellatrix;
 use eframe::egui::{
-    self, Color32, Context, Hyperlink, Label, RichText, Separator, TextStyle, TopBottomPanel, Ui,
-    Visuals,
+    self, Color32, Context, Hyperlink, Label, RichText, Separator, Slider, TextStyle,
+    TopBottomPanel, Ui, Vec2, Visuals,
 };
 
 pub const PADDING: f32 = 5.0;
@@ -91,6 +90,8 @@ impl epi::App for Bellatrix {
 
             self.render_tracking_information_section(ui);
 
+            // self.font_id_ui(ui);
+
             egui::warn_if_debug_build(ui);
         });
     }
@@ -101,10 +102,12 @@ impl epi::App for Bellatrix {
         _frame: &epi::Frame,
         _storage: Option<&dyn epi::Storage>,
     ) {
+        // NOTE(elsuizo:2022-03-06): una manera de agrandar la fuente parece que puede ser esta...
+        // ctx.set_pixels_per_point(1.2);
         // enable dark mode
+        ctx.request_repaint();
         ctx.set_visuals(Visuals::dark());
-
-        self.configure_fonts(ctx);
+        // self.configure_fonts(ctx);
 
         // TODO(elsuizo:2022-03-04): parece que esto no anda ...
         #[cfg(feature = "persistence")]
@@ -125,6 +128,7 @@ impl epi::App for Bellatrix {
 
 fn main() {
     let app = bellatrix::Bellatrix::default();
-    let native_options = eframe::NativeOptions::default();
+    let mut native_options = eframe::NativeOptions::default();
+    native_options.initial_window_size = Some(Vec2::new(100.0, 100.0));
     eframe::run_native(Box::new(app), native_options);
 }

@@ -1,12 +1,13 @@
 use crate::egui::{
-    self, Color32, Context, FontData, FontDefinitions, FontFamily, Hyperlink, Layout, TextStyle,
+    self, Color32, Context, FontData, FontDefinitions, FontFamily, Hyperlink, Layout, Slider,
+    TextStyle,
 };
 use crate::utils;
 use crate::CYAN;
 use crate::WHITE;
 use std::borrow::Cow;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum TokenPool {
     BNB,
     BUSD,
@@ -20,7 +21,7 @@ impl Default for TokenPool {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum BNBElection {
     Spend,
     Buy,
@@ -32,7 +33,7 @@ impl Default for BNBElection {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TrackingInformation {
     BscCode,
     Holders,
@@ -48,6 +49,7 @@ impl Default for TrackingInformation {
     }
 }
 
+#[derive(Clone, PartialEq)]
 pub struct BotLog {
     date: String,
     text: String,
@@ -56,6 +58,8 @@ pub struct BotLog {
 
 #[derive(Default)]
 pub struct Bellatrix {
+    pub font_id: egui::FontId,
+
     pub logs: Vec<BotLog>,
 
     pub private_key: String,
@@ -93,6 +97,9 @@ impl Bellatrix {
     const ROWS_SPACE: f32 = 10.0;
     const COLUMNS_SPACE: f32 = 10.0;
     const WINDOWS_SIGNAL_COLOR: Color32 = Color32::from_rgb(255, 140, 0);
+    const ERROR_ADDRESS_COLOR: Color32 = Color32::from_rgb(255, 0, 0);
+    const GOOD_ADDRESS_COLOR: Color32 = Color32::from_rgb(0, 255, 0);
+    const VALID_ADDRESS_LENGTH: usize = 42;
 
     pub fn configure_fonts(&mut self, ctx: &Context) {
         let mut font_definitions = FontDefinitions::default();
@@ -123,6 +130,7 @@ impl Bellatrix {
             tx_hash: format!("{}", a),
         });
         Bellatrix {
+            font_id: Default::default(),
             logs: Vec::from_iter(iter),
             address: String::new(),
             bnb_election: BNBElection::Spend,
@@ -138,23 +146,73 @@ impl Bellatrix {
         }
     }
 
+    // TODO(elsuizo:2022-03-06): esto no anda
+    pub fn font_id_ui(&mut self, ui: &mut eframe::egui::Ui) {
+        let families = ui.fonts().families();
+        ui.horizontal(|ui| {
+            ui.add(Slider::new(&mut self.font_id.size, 4.0..=40.0).max_decimals(0));
+            // for alternative in families {
+            //     let text = alternative.to_string();
+            //     ui.radio_value(&mut self.font_id.family, alternative, text);
+            // }
+        });
+    }
+
     /// render the wallet section
     pub fn render_wallet_section(&mut self, ui: &mut eframe::egui::Ui) {
         ui.add_space(Self::INTERNAL_SPACE);
 
+        // NOTE(elsuizo:2022-03-08): con frame == false lo que hace es no renderizar al boton en si
+        // sino que hace que parezca un Label
+        // validation feedback for the user
+        let good_address = egui::Button::new(
+            egui::RichText::new(" ✔ ".to_string()).color(Self::GOOD_ADDRESS_COLOR),
+        )
+        .frame(false);
+        let bad_address = egui::Button::new(
+            egui::RichText::new(" 🗙 ".to_string()).color(Self::ERROR_ADDRESS_COLOR),
+        )
+        .frame(false);
+
+        // TODO(elsuizo:2022-03-08): hay que ponerle mas size a estos dos campos(porque no llega a
+        // renderizar una address completa osea deja caracteres afuera)
         ui.horizontal(|ui| {
             ui.label("Address:");
             // TODO(elsuizo:2022-02-25): validate the input
             let address_input = ui
                 .text_edit_singleline(&mut self.address)
-                .on_hover_text("write the address here");
+                .on_hover_text("write a valid address here");
+
+            // render the validation feedback message
+            if utils::validate_address_length(&self.address, Self::VALID_ADDRESS_LENGTH) {
+                ui.add(good_address);
+            } else {
+                ui.add(bad_address);
+            }
         });
+
         ui.add_space(Self::INTERNAL_SPACE);
+
+        let good_private_key = egui::Button::new(
+            egui::RichText::new(" ✔ ".to_string()).color(Self::GOOD_ADDRESS_COLOR),
+        )
+        .frame(false);
+        let bad_private_key = egui::Button::new(
+            egui::RichText::new(" 🗙 ".to_string()).color(Self::ERROR_ADDRESS_COLOR),
+        )
+        .frame(false);
+
         ui.horizontal(|ui| {
             ui.label("PrivateKey: ");
             // TODO(elsuizo:2022-02-25): validate the password
             let password_input = utils::password_ui(ui, &mut self.private_key)
                 .on_hover_text("write the private key here");
+            // render the validation feedback message
+            if utils::validate_address_length(&self.address, Self::VALID_ADDRESS_LENGTH) {
+                ui.add(good_private_key);
+            } else {
+                ui.add(bad_private_key);
+            }
         });
 
         ui.add_space(Self::INTERNAL_SPACE);
@@ -306,7 +364,7 @@ impl Bellatrix {
             // TODO(elsuizo:2022-03-01): handle this response
             let exact_amout_to_sell = ui
                 .text_edit_singleline(&mut self.token_amount_sell)
-                .on_hover_text("write the exact amount to sell here");
+                .on_hover_text_at_pointer("write the exact amount to sell here");
             if ui.button("Sell").clicked() {
                 println!("Sell!!!");
             }
@@ -374,7 +432,7 @@ impl Bellatrix {
         for element in &self.logs {
             ui.horizontal(|ui| {
                 let title = format!("{}: {}", element.date, "Buy 12323 TKM - 0.23 BNB");
-                ui.colored_label(WHITE, title);
+                ui.colored_label(Color32::DARK_RED, title);
 
                 ui.style_mut().visuals.hyperlink_color = CYAN;
                 // ui.add_space(PADDING);
