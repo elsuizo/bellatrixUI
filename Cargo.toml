@@ -16,9 +16,10 @@ serde = { version = "1", features = ["derive"], optional = true }
 chrono = "0.4.19"
 
 # web3_rust_wrapper = "0.2.1"
-# NOTE(elsuizo:2022-03-15): hago que apunte a la carpeta del repo en lugar del
-# que esta en crates.io porque asi es mas facil hacerle cambios sobre la marcha
-web3_rust_wrapper = {version = "0.2.1", path = "../web3helper"}
+# web3_rust_wrapper = {version = "0.2.1", path = "../web3helper"}
+# NOTE(elsuizo:2022-03-15): hago que apunte al repo con el branch en el que
+# estoy probando cosas
+web3_rust_wrapper = {git = "https://github.com/Nikola43/web3helper.git", branch = "suizo-refactor"}
 dotenv = "0.15.0"
 # async-std = {version = "1.10.0", features = ["unstable"]}
 
