@@ -6,7 +6,7 @@ use crate::utils;
 use crate::CYAN;
 use crate::WHITE;
 use std::borrow::Cow;
-use web3::types::U256;
+use web3::types::{H160, U256};
 use web3_rust_wrapper::Web3Manager;
 
 #[derive(PartialEq, Debug, Clone)]
@@ -85,11 +85,11 @@ pub struct Bellatrix {
 
     pub logs: Vec<BotLog>,
 
-    pub private_key: String,
+    pub private_key: (String, bool),
 
     pub balance: U256,
 
-    pub address: String,
+    pub address_user_input: (String, bool),
 
     pub bnb_election: BNBElection,
 
@@ -127,6 +127,7 @@ impl Bellatrix {
     const ERROR_ADDRESS_COLOR: Color32 = Color32::from_rgb(255, 0, 0);
     const GOOD_ADDRESS_COLOR: Color32 = Color32::from_rgb(0, 255, 0);
     const VALID_ADDRESS_LENGTH: usize = 42;
+    const VALID_PRIVATE_KEY_LENGTH: usize = 64;
 
     pub fn configure_fonts(&mut self, ctx: &Context) {
         let mut font_definitions = FontDefinitions::default();
@@ -159,11 +160,11 @@ impl Bellatrix {
         Bellatrix {
             font_id: Default::default(),
             logs: Vec::from_iter(iter),
-            address: String::new(),
+            address_user_input: Default::default(),
             bnb_election: BNBElection::Spend,
             user_money: 0.0,
             token_pool: TokenPool::BNB,
-            private_key: String::new(),
+            private_key: Default::default(),
             balance: Default::default(),
             token_amount_sell: String::new(),
             token_amount_sell_percent: 0.0,
@@ -218,12 +219,21 @@ impl Bellatrix {
             ui.label("Address:");
             // TODO(elsuizo:2022-02-25): validate the input
             let address_input = ui
-                .text_edit_singleline(&mut self.address)
+                .text_edit_singleline(&mut self.address_user_input.0)
                 .on_hover_text("write a valid address here");
 
-            if address_input.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {}
+            if address_input.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
+                if utils::validate_address_length(
+                    &self.address_user_input.0,
+                    Self::VALID_ADDRESS_LENGTH,
+                ) {
+                    self.address_user_input.1 = true;
+                } else {
+                    self.address_user_input.1 = false;
+                }
+            }
             // render the validation feedback message
-            if utils::validate_address_length(&self.address, Self::VALID_ADDRESS_LENGTH) {
+            if self.address_user_input.1 {
                 ui.add(good_address);
             } else {
                 ui.add(bad_address);
@@ -245,13 +255,25 @@ impl Bellatrix {
         ui.horizontal(|ui| {
             ui.label("PrivateKey: ");
             // TODO(elsuizo:2022-02-25): validate the password
-            let password_input = utils::password_ui(ui, &mut self.private_key)
+            let password_input = utils::password_ui(ui, &mut self.private_key.0)
                 .on_hover_text("write the private key here");
             // render the validation feedback message
-            if utils::validate_address_length(&self.address, Self::VALID_ADDRESS_LENGTH) {
+            if ui.input().key_pressed(egui::Key::Enter) {
+                if utils::validate_address_length(
+                    &self.private_key.0,
+                    Self::VALID_PRIVATE_KEY_LENGTH,
+                ) {
+                    self.private_key.1 = true;
+                } else {
+                    self.private_key.1 = false;
+                }
+            }
+            // render the validation feedback message
+            if self.private_key.1 {
                 ui.add(good_private_key);
             } else {
                 ui.add(bad_private_key);
+                ui.add(egui::widgets::Spinner::new());
             }
         });
 
@@ -265,7 +287,7 @@ impl Bellatrix {
         ui.horizontal(|ui| {
             ui.label("From(Address):");
             // TODO(elsuizo:2022-02-25): validate the address
-            let address_input = ui.text_edit_singleline(&mut self.address);
+            let address_input = ui.text_edit_singleline(&mut self.address_user_input.0);
             if ui.button("Accept").clicked() {
                 println!("address input");
             }
@@ -276,7 +298,7 @@ impl Bellatrix {
             ui.label("To(Address):");
             // TODO(elsuizo:2022-02-25): validate the address
             let address_input = ui
-                .text_edit_singleline(&mut self.address)
+                .text_edit_singleline(&mut self.address_user_input.0)
                 .on_hover_text("write the address here");
             // TODO(elsuizo:2022-02-26): if orange color(Windows) / Scam(Macbook) is a signal check
             // before buying
@@ -337,13 +359,13 @@ impl Bellatrix {
                         ui.end_row();
                         ui.label("Set gas limit");
                         ui.add(
-                            egui::TextEdit::singleline(&mut self.address)
+                            egui::TextEdit::singleline(&mut self.address_user_input.0)
                                 .hint_text("The gas you want to set"),
                         );
                         ui.end_row();
                         ui.label("Set gas price");
                         ui.add(
-                            egui::TextEdit::singleline(&mut self.address)
+                            egui::TextEdit::singleline(&mut self.address_user_input.0)
                                 .hint_text("The GWEI you want to set"),
                         );
                         ui.end_row();
@@ -459,7 +481,7 @@ impl Bellatrix {
 
         ui.horizontal(|ui| {
             // TODO(elsuizo:2022-02-25): validate the address
-            let address_input = ui.text_edit_singleline(&mut self.address);
+            let address_input = ui.text_edit_singleline(&mut self.address_user_input.0);
             if ui.button(" ⎆ ").clicked() {
                 println!("Check output transaction and warning users");
             }

@@ -3493,6 +3493,7 @@ dependencies = [
 [[package]]
 name = "web3_rust_wrapper"
 version = "0.2.1"
+source = "git+https://github.com/Nikola43/web3helper.git?branch=suizo-refactor#2b14900c8ea402b7f4d3a0894d1e88b3a4bb4600"
 dependencies = [
  "chrono",
  "clearscreen",
