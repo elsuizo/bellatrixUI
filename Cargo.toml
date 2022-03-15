@@ -13,7 +13,9 @@ eframe = {version = "0.17.0", features = ["persistence"]}
 serde = { version = "1", features = ["derive"], optional = true }
 
 chrono = "0.4.19"
-web3_rust_wrapper = "0.2.1"
+# web3_rust_wrapper = "0.2.1"
+# web3_rust_wrapper = {path = "../web3helper", version = "0.2.1", branch = "suizo-refactor"}
+web3_rust_wrapper = {git = "https://github.com/Nikola43/web3helper.git", branch = "suizo-refactor"}
 
 [features]
 default = []

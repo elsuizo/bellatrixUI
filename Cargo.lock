@@ -3381,8 +3381,7 @@ dependencies = [
 [[package]]
 name = "web3_rust_wrapper"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe3509a9177996d36f725dd503852533bf53407dba7cc3fda553d6fc06e572f9"
+source = "git+https://github.com/Nikola43/web3helper.git?branch=suizo-refactor#2b14900c8ea402b7f4d3a0894d1e88b3a4bb4600"
 dependencies = [
  "chrono",
  "clearscreen",
