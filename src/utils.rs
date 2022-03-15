@@ -1,4 +1,5 @@
 use eframe::egui::{self, Ui};
+use web3::types::U256;
 
 pub fn password_ui(ui: &mut Ui, password: &mut String) -> egui::Response {
     // Generate an id for the state
@@ -41,4 +42,11 @@ pub fn password(password: &mut String) -> impl egui::Widget + '_ {
 
 pub fn validate_address_length(input: &str, desired_length: usize) -> bool {
     input.len() == desired_length
+}
+
+pub fn wei_to_eth(wei_val: U256) -> f64 {
+    // ethereum does not have fractional numbers so every amount is expressed in wei, to show the
+    // amount in ether this function is used ethereum no tiene numeros fraccionarios por lo que
+    // toda cantidad se expresa en wei, para mostrar la cantidad en ether se utiliza esta función
+    wei_val.as_u128() as f64 / 1_000_000_000_000_000_000.0f64
 }

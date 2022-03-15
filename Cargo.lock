@@ -246,6 +246,7 @@ dependencies = [
  "dotenv",
  "eframe",
  "serde",
+ "web3",
  "web3_rust_wrapper",
 ]
 

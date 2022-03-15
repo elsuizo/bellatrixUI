@@ -6,6 +6,7 @@ use crate::utils;
 use crate::CYAN;
 use crate::WHITE;
 use std::borrow::Cow;
+use web3::types::U256;
 use web3_rust_wrapper::Web3Manager;
 
 #[derive(PartialEq, Debug, Clone)]
@@ -86,7 +87,7 @@ pub struct Bellatrix {
 
     pub private_key: String,
 
-    pub balance: String,
+    pub balance: U256,
 
     pub address: String,
 
@@ -220,11 +221,13 @@ impl Bellatrix {
                 .text_edit_singleline(&mut self.address)
                 .on_hover_text("write a valid address here");
 
+            if address_input.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {}
             // render the validation feedback message
             if utils::validate_address_length(&self.address, Self::VALID_ADDRESS_LENGTH) {
                 ui.add(good_address);
             } else {
                 ui.add(bad_address);
+                ui.add(egui::widgets::Spinner::new());
             }
         });
 
@@ -307,7 +310,8 @@ impl Bellatrix {
                             self.balance =
                                 self.web3m_wrapper.web3m.get_account_balance(accounts[0]);
                         }
-                        ui.label(&self.balance);
+                        // show the balance current value
+                        ui.label(format!("{} wei", utils::wei_to_eth(self.balance)));
                         ui.end_row();
                         egui::ComboBox::from_label("Select one!")
                             .selected_text(format!("{:?}", self.bnb_election))
@@ -464,6 +468,11 @@ impl Bellatrix {
         ui.add_space(Self::INTERNAL_SPACE);
         ui.separator();
     }
+
+    // TODO(elsuizo:2022-03-15): para renderizar los logs del bot
+    // pub fn render_bot_logs(&self, ui: &mut eframe::egui::Ui) {
+    //     ScrollArea::auto_sized().show(ui, |ui| self.render_logs(ui));
+    // }
 
     pub fn render_new_log(&self, ui: &mut eframe::egui::Ui) {
         ui.add_space(Self::INTERNAL_SPACE);
