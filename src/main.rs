@@ -68,11 +68,11 @@ impl epi::App for Bellatrix {
 
 fn main() {
     dotenv::dotenv().ok();
-    let mut app = bellatrix::Bellatrix::new();
-    app.load(
-        &env::var("ACCOUNT_ADDRESS").unwrap(),
-        &env::var("PRIVATE_TEST_KEY").unwrap(),
-    );
+    let app = bellatrix::Bellatrix::new();
+    // app.load(
+    //     &env::var("ACCOUNT_ADDRESS").unwrap(),
+    //     &env::var("PRIVATE_TEST_KEY").unwrap(),
+    // );
     let mut native_options = eframe::NativeOptions::default();
     native_options.initial_window_size = Some(Vec2::new(500.0, 500.0));
     eframe::run_native(Box::new(app), native_options);

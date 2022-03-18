@@ -5,7 +5,7 @@ use crate::egui::{
 use crate::utils;
 use eframe::epi;
 use std::borrow::Cow;
-use web3::types::{H160, U256};
+use web3::types::{Address, H160, U256};
 use web3_rust_wrapper::Web3Manager;
 
 #[derive(PartialEq, Debug, Clone)]
@@ -78,21 +78,60 @@ impl Web3Wrapper {
         "https://speedy-nodes-nyc.moralis.io/84a2745d907034e6d388f8d6/bsc/testnet";
 }
 
+// TODO(elsuizo:2022-03-18): mover esto a un archivo `user.rs`
+// TODO(elsuizo:2022-03-18): hacer los getters y setters para este type
+#[derive(Debug, Default)]
+pub struct User {
+    /// address of the user and a flag to signaling is set correctly
+    pub wallet_address: (String, bool),
+    /// private key of the user and a flag to signaling is set correctly
+    pub private_key: (String, bool),
+    /// balance of the user
+    balance: U256,
+    /// cryptocurrency address
+    crypto_address: (String, bool),
+    /// contract to buy address
+    contract_address: (String, bool),
+
+    take_profit: f32,
+
+    stop_loss: f32,
+
+    gas_limit: f32,
+
+    slippage: f32,
+    // this how you opt-out of serialization of a member
+    #[cfg_attr(feature = "persistence", serde(skip))]
+    pub force_buy_percent: f32,
+
+    #[cfg_attr(feature = "persistence", serde(skip))]
+    pub force_sell_percent: f32,
+
+    #[cfg_attr(feature = "persistence", serde(skip))]
+    pub auto_swap: bool,
+}
+
+//-------------------------------------------------------------------------
+//                        UI code
+//-------------------------------------------------------------------------
+
 // #[derive(Default)]
 pub struct Bellatrix {
+    /// users
+    // users: Vec<User>,
+    pub user: User,
+
+    gas_limit_input: String,
+
+    gas_price_input: String,
+
     pub font_id: egui::FontId,
 
     pub logs: Vec<BotLog>,
 
-    pub private_key: (String, bool),
-
-    pub balance: U256,
-
-    pub address_user_input: (String, bool),
-
     pub bnb_election: BNBElection,
 
-    pub user_money: f32,
+    pub user_money_input: f32,
 
     pub token_pool: TokenPool,
 
@@ -105,16 +144,6 @@ pub struct Bellatrix {
     pub web3m_wrapper: Web3Wrapper,
 
     pub state: bool,
-
-    // this how you opt-out of serialization of a member
-    #[cfg_attr(feature = "persistence", serde(skip))]
-    pub force_buy_percent: f32,
-
-    #[cfg_attr(feature = "persistence", serde(skip))]
-    pub force_sell_percent: f32,
-
-    #[cfg_attr(feature = "persistence", serde(skip))]
-    pub auto_swap: bool,
 }
 
 impl Bellatrix {
@@ -159,22 +188,19 @@ impl Bellatrix {
             tx_hash: format!("{}", a),
         });
         Bellatrix {
+            user: Default::default(),
+            gas_limit_input: Default::default(),
+            gas_price_input: Default::default(),
             font_id: Default::default(),
             logs: Vec::from_iter(iter),
-            address_user_input: Default::default(),
             bnb_election: BNBElection::Spend,
-            user_money: 0.0,
+            user_money_input: 0.0,
             token_pool: TokenPool::BNB,
-            private_key: Default::default(),
-            balance: Default::default(),
             token_amount_sell: String::new(),
             token_amount_sell_percent: 0.0,
             tracking_information: TrackingInformation::default(),
             web3m_wrapper: Default::default(),
             state: false,
-            force_buy_percent: 0.0,
-            force_sell_percent: 0.0,
-            auto_swap: false,
         }
     }
 
@@ -189,8 +215,8 @@ impl Bellatrix {
             ));
 
             ui.vertical_centered(|ui2| {
-                ui2.label(format!("{}", self.address_user_input.0));
-                ui2.label(format!("Balance: {}", utils::wei_to_eth(self.balance)));
+                ui2.label(format!("{}", self.user.wallet_address.0));
+                ui2.label(format!("Balance: {}", utils::wei_to_eth(self.user.balance)));
             });
         });
 
@@ -198,6 +224,7 @@ impl Bellatrix {
     }
 
     pub fn load(&mut self, plain_address: &str, private_key: &str) {
+        // only load if the address and the private key are valid
         async_std::task::block_on(async {
             self.web3m_wrapper
                 .web3m
@@ -307,21 +334,21 @@ impl Bellatrix {
             ui.label("Address:");
             // TODO(elsuizo:2022-02-25): validate the input
             let address_input = ui
-                .text_edit_singleline(&mut self.address_user_input.0)
+                .text_edit_singleline(&mut self.user.wallet_address.0)
                 .on_hover_text("write a valid address here");
 
             if address_input.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
                 if utils::validate_address_length(
-                    &self.address_user_input.0,
+                    &self.user.wallet_address.0,
                     Self::VALID_ADDRESS_LENGTH,
                 ) {
-                    self.address_user_input.1 = true;
+                    self.user.wallet_address.1 = true;
                 } else {
-                    self.address_user_input.1 = false;
+                    self.user.wallet_address.1 = false;
                 }
             }
             // render the validation feedback message
-            if self.address_user_input.1 {
+            if self.user.wallet_address.1 {
                 ui.add(good_address);
             } else {
                 ui.add(bad_address);
@@ -343,21 +370,21 @@ impl Bellatrix {
         ui.horizontal(|ui| {
             ui.label("PrivateKey: ");
             // TODO(elsuizo:2022-02-25): validate the password
-            let password_input = utils::password_ui(ui, &mut self.private_key.0)
+            let password_input = utils::password_ui(ui, &mut self.user.private_key.0)
                 .on_hover_text("write the private key here");
             // render the validation feedback message
             if ui.input().key_pressed(egui::Key::Enter) {
                 if utils::validate_address_length(
-                    &self.private_key.0,
+                    &self.user.private_key.0,
                     Self::VALID_PRIVATE_KEY_LENGTH,
                 ) {
-                    self.private_key.1 = true;
+                    self.user.private_key.1 = true;
                 } else {
-                    self.private_key.1 = false;
+                    self.user.private_key.1 = false;
                 }
             }
             // render the validation feedback message
-            if self.private_key.1 {
+            if self.user.private_key.1 {
                 ui.add(good_private_key);
             } else {
                 ui.add(bad_private_key);
@@ -387,7 +414,7 @@ impl Bellatrix {
         ui.horizontal(|ui| {
             ui.label("From(Address):");
             // TODO(elsuizo:2022-02-25): validate the address
-            let address_input = ui.text_edit_singleline(&mut self.address_user_input.0);
+            let address_input = ui.text_edit_singleline(&mut self.user.wallet_address.0);
             if ui.button("Accept").clicked() {
                 println!("address input");
             }
@@ -398,7 +425,7 @@ impl Bellatrix {
             ui.label("To Token contract:");
             // TODO(elsuizo:2022-02-25): validate the address
             let address_input = ui
-                .text_edit_singleline(&mut self.address_user_input.0)
+                .text_edit_singleline(&mut self.user.crypto_address.0)
                 .on_hover_text("write the address here");
             // TODO(elsuizo:2022-02-26): if orange color(Windows) / Scam(Macbook) is a signal check
             // before buying
@@ -429,11 +456,14 @@ impl Bellatrix {
                     .show(ui, |ui| {
                         if ui.button("Balance").clicked() {
                             let accounts = &self.web3m_wrapper.web3m.accounts;
-                            self.balance =
-                                self.web3m_wrapper.web3m.get_account_balance(accounts[0]);
+                            // only if the account are valid
+                            if !accounts.is_empty() {
+                                self.user.balance =
+                                    self.web3m_wrapper.web3m.get_account_balance(accounts[0]);
+                            }
                         }
                         // show the balance current value
-                        ui.label(format!("{} wei", utils::wei_to_eth(self.balance)));
+                        ui.label(format!("{} wei", utils::wei_to_eth(self.user.balance)));
                         ui.end_row();
                         egui::ComboBox::from_label("Select one!")
                             .selected_text(format!("{:?}", self.bnb_election))
@@ -452,20 +482,20 @@ impl Bellatrix {
                         // TODO(elsuizo:2022-02-28): maybe here its not a good idea have a
                         // slider...
                         ui.add(
-                            egui::Slider::new(&mut self.user_money, 0f32..=1000.0)
+                            egui::Slider::new(&mut self.user_money_input, 0f32..=1000.0)
                                 .text("put text here")
-                                .suffix("$"),
+                                .suffix("＄"),
                         );
                         ui.end_row();
                         ui.label("Set gas limit");
                         ui.add(
-                            egui::TextEdit::singleline(&mut self.address_user_input.0)
+                            egui::TextEdit::singleline(&mut self.gas_limit_input)
                                 .hint_text("The gas you want to set"),
                         );
                         ui.end_row();
                         ui.label("Set gas price");
                         ui.add(
-                            egui::TextEdit::singleline(&mut self.address_user_input.0)
+                            egui::TextEdit::singleline(&mut self.gas_price_input)
                                 .hint_text("The GWEI you want to set"),
                         );
                         ui.end_row();
@@ -491,27 +521,27 @@ impl Bellatrix {
                                 .heading(),
                         ));
                         ui.end_row();
-                        ui.checkbox(&mut self.auto_swap, "Enable Auto Swap");
+                        ui.checkbox(&mut self.user.auto_swap, "Enable Auto Swap");
                         ui.end_row();
                         ui.horizontal(|ui| {
                             ui.label("BUY");
                             ui.add(
-                                egui::Slider::new(&mut self.force_buy_percent, 0.0..=100.0)
+                                egui::Slider::new(&mut self.user.force_buy_percent, 0.0..=100.0)
                                     .suffix(" ％"),
                             );
                             if ui.button("Force Buy").clicked() {
-                                self.force_buy_percent += 1.0;
+                                self.user.force_buy_percent += 1.0;
                             }
                         });
                         ui.end_row();
                         ui.horizontal(|ui| {
                             ui.label("Sell");
                             ui.add(
-                                egui::Slider::new(&mut self.force_sell_percent, 0.0..=100.0)
+                                egui::Slider::new(&mut self.user.force_sell_percent, 0.0..=100.0)
                                     .suffix(" ％"),
                             );
                             if ui.button("Force Sell").clicked() {
-                                self.force_sell_percent += 1.0;
+                                self.user.force_sell_percent += 1.0;
                             }
                         });
                     });
@@ -585,7 +615,7 @@ impl Bellatrix {
 
         ui.horizontal(|ui| {
             // TODO(elsuizo:2022-02-25): validate the address
-            let address_input = ui.text_edit_singleline(&mut self.address_user_input.0);
+            let address_input = ui.text_edit_singleline(&mut self.user.wallet_address.0);
             if ui.button(" ⎆ ").clicked() {
                 println!("Check output transaction and warning users");
             }
@@ -601,21 +631,21 @@ impl Bellatrix {
         ui.horizontal(|ui| {
             ui.label("Take profit");
             ui.add(
-                egui::Slider::new(&mut self.user_money, 0.0..=100.0)
+                egui::Slider::new(&mut self.user.take_profit, 0.0f32..=100.0f32)
                     // .text("put text here")
                     .suffix(" ％"),
             );
 
             ui.label("Stop loss");
             ui.add(
-                egui::Slider::new(&mut self.user_money, 0.0..=100.0)
+                egui::Slider::new(&mut self.user.stop_loss, 0.0..=100.0)
                     // .text("put text here")
                     .suffix(" ％"),
             );
 
             ui.label("Slippage");
             ui.add(
-                egui::Slider::new(&mut self.user_money, 0.0..=100.0)
+                egui::Slider::new(&mut self.user.slippage, 0.0..=100.0)
                     // .text("put text here")
                     .suffix(" ％"),
             );
