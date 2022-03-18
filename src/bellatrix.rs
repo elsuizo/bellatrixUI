@@ -1,10 +1,9 @@
 use crate::egui::{
-    self, Color32, Context, FontData, FontDefinitions, FontFamily, Hyperlink, Layout, Slider,
-    TextStyle,
+    self, Color32, Context, FontData, FontDefinitions, FontFamily, Hyperlink, Label, Layout,
+    RichText, Slider, TextStyle, TopBottomPanel,
 };
 use crate::utils;
-use crate::CYAN;
-use crate::WHITE;
+use eframe::epi;
 use std::borrow::Cow;
 use web3::types::{H160, U256};
 use web3_rust_wrapper::Web3Manager;
@@ -105,6 +104,8 @@ pub struct Bellatrix {
 
     pub web3m_wrapper: Web3Wrapper,
 
+    pub state: bool,
+
     // this how you opt-out of serialization of a member
     #[cfg_attr(feature = "persistence", serde(skip))]
     pub force_buy_percent: f32,
@@ -170,10 +171,30 @@ impl Bellatrix {
             token_amount_sell_percent: 0.0,
             tracking_information: TrackingInformation::default(),
             web3m_wrapper: Default::default(),
+            state: false,
             force_buy_percent: 0.0,
             force_sell_percent: 0.0,
             auto_swap: false,
         }
+    }
+
+    pub fn render_header(&self, ui: &mut eframe::egui::Ui) {
+        ui.add_space(Self::INTERNAL_SPACE);
+
+        ui.vertical_centered(|ui| {
+            ui.add(Label::new(
+                RichText::new("Account Info")
+                    .color(Color32::WHITE)
+                    .heading(),
+            ));
+
+            ui.vertical_centered(|ui2| {
+                ui2.label(format!("{}", self.address_user_input.0));
+                ui2.label(format!("Balance: {}", utils::wei_to_eth(self.balance)));
+            });
+        });
+
+        ui.add_space(Self::INTERNAL_SPACE);
     }
 
     pub fn load(&mut self, plain_address: &str, private_key: &str) {
@@ -197,9 +218,76 @@ impl Bellatrix {
         });
     }
 
+    pub fn render_activate_stop_section(&mut self, ui: &mut eframe::egui::Ui) {
+        ui.add_space(Self::INTERNAL_SPACE);
+
+        ui.horizontal(|ui| {
+            ui.add(Label::new(
+                RichText::new("STOP / START")
+                    .color(Color32::WHITE)
+                    .heading(),
+            ));
+            ui.add(utils::toggle(&mut self.state));
+        });
+
+        ui.add_space(Self::INTERNAL_SPACE);
+        ui.separator();
+    }
+
+    pub fn render_footer(&self, ui: &mut eframe::egui::Ui, ctx: &Context) {
+        let user_input = String::new();
+        let button = egui::Button::new("Button").frame(false);
+        let tooltip_ui = |ui: &mut egui::Ui| {
+            ui.label(egui::RichText::new(
+                "Donate: 0x43aF68DcC19Bbce20F3354F31Bc1159f651643aE",
+            ));
+            ui.label("Click to copy");
+        };
+
+        TopBottomPanel::bottom("footer").show(ctx, |ui| {
+            ui.vertical_centered(|ui| {
+                ui.add_space(10.);
+                if ui.add(button).on_hover_ui(tooltip_ui).clicked() {
+                    ui.output().copied_text = user_input;
+                }
+                utils::render_monospaced_label(ui, "Made with ♥ By Cau1dr0n 1ake");
+                utils::render_monospaced_label(
+                    ui,
+                    "Donate: 0x43aF68DcC19Bbce20F3354F31Bc1159f651643aE",
+                );
+                utils::render_hyperlink(ui, "https://domain.com", "Buy API KEY");
+                ui.add_space(10.);
+            })
+        });
+    }
+
+    pub fn render_top_panel(
+        &self,
+        ui: &mut eframe::egui::Ui,
+        ctx: &egui::Context,
+        frame: &epi::Frame,
+    ) {
+        ui.add_space(Self::INTERNAL_SPACE);
+
+        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
+            // The top panel is often a good place for a menu bar:
+            egui::menu::bar(ui, |ui| {
+                ui.menu_button("File", |ui| {
+                    if ui.button("Quit").clicked() {
+                        frame.quit();
+                    }
+                });
+            });
+        });
+
+        // NOTE(elsuizo:2022-03-18): le agrego un poco mas para que quede bien
+        ui.add_space(Self::INTERNAL_SPACE + 20.0);
+        // ui.separator();
+    }
+
     /// render the wallet section
     pub fn render_wallet_section(&mut self, ui: &mut eframe::egui::Ui) {
-        ui.add_space(Self::INTERNAL_SPACE);
+        ui.add_space(Self::INTERNAL_SPACE + 20.0);
 
         // NOTE(elsuizo:2022-03-08): con frame == false lo que hace es no renderizar al boton en si
         // sino que hace que parezca un Label
@@ -284,6 +372,18 @@ impl Bellatrix {
     pub fn render_addres_section(&mut self, ui: &mut eframe::egui::Ui) {
         ui.add_space(Self::INTERNAL_SPACE);
 
+        ui.vertical_centered(|ui| {
+            ui.add(Label::new(
+                RichText::new(
+                    "Select your preferred cryptocurrency and the contract you wish to purchase",
+                )
+                .color(Color32::WHITE)
+                .heading(),
+            ));
+        });
+
+        ui.add_space(Self::INTERNAL_SPACE);
+
         ui.horizontal(|ui| {
             ui.label("From(Address):");
             // TODO(elsuizo:2022-02-25): validate the address
@@ -295,7 +395,7 @@ impl Bellatrix {
         ui.add_space(Self::INTERNAL_SPACE);
 
         ui.horizontal(|ui| {
-            ui.label("To(Address):");
+            ui.label("To Token contract:");
             // TODO(elsuizo:2022-02-25): validate the address
             let address_input = ui
                 .text_edit_singleline(&mut self.address_user_input.0)
@@ -327,7 +427,7 @@ impl Bellatrix {
                     .num_columns(2)
                     .spacing([Self::ROWS_SPACE, Self::COLUMNS_SPACE])
                     .show(ui, |ui| {
-                        if ui.button("BNB Balance").clicked() {
+                        if ui.button("Balance").clicked() {
                             let accounts = &self.web3m_wrapper.web3m.accounts;
                             self.balance =
                                 self.web3m_wrapper.web3m.get_account_balance(accounts[0]);
@@ -385,7 +485,11 @@ impl Bellatrix {
                     .num_columns(1)
                     .spacing([Self::ROWS_SPACE, Self::COLUMNS_SPACE])
                     .show(ui, |ui| {
-                        ui.heading("Swap configuration");
+                        ui.add(Label::new(
+                            RichText::new("Swap configuration")
+                                .color(Color32::WHITE)
+                                .heading(),
+                        ));
                         ui.end_row();
                         ui.checkbox(&mut self.auto_swap, "Enable Auto Swap");
                         ui.end_row();
@@ -393,7 +497,7 @@ impl Bellatrix {
                             ui.label("BUY");
                             ui.add(
                                 egui::Slider::new(&mut self.force_buy_percent, 0.0..=100.0)
-                                    .suffix("%"),
+                                    .suffix(" ％"),
                             );
                             if ui.button("Force Buy").clicked() {
                                 self.force_buy_percent += 1.0;
@@ -404,7 +508,7 @@ impl Bellatrix {
                             ui.label("Sell");
                             ui.add(
                                 egui::Slider::new(&mut self.force_sell_percent, 0.0..=100.0)
-                                    .suffix("%"),
+                                    .suffix(" ％"),
                             );
                             if ui.button("Force Sell").clicked() {
                                 self.force_sell_percent += 1.0;
@@ -491,10 +595,35 @@ impl Bellatrix {
         ui.separator();
     }
 
-    // TODO(elsuizo:2022-03-15): para renderizar los logs del bot
-    // pub fn render_bot_logs(&self, ui: &mut eframe::egui::Ui) {
-    //     ScrollArea::auto_sized().show(ui, |ui| self.render_logs(ui));
-    // }
+    pub fn render_take_profit_section(&mut self, ui: &mut eframe::egui::Ui) {
+        ui.add_space(Self::INTERNAL_SPACE);
+
+        ui.horizontal(|ui| {
+            ui.label("Take profit");
+            ui.add(
+                egui::Slider::new(&mut self.user_money, 0.0..=100.0)
+                    // .text("put text here")
+                    .suffix(" ％"),
+            );
+
+            ui.label("Stop loss");
+            ui.add(
+                egui::Slider::new(&mut self.user_money, 0.0..=100.0)
+                    // .text("put text here")
+                    .suffix(" ％"),
+            );
+
+            ui.label("Slippage");
+            ui.add(
+                egui::Slider::new(&mut self.user_money, 0.0..=100.0)
+                    // .text("put text here")
+                    .suffix(" ％"),
+            );
+        });
+
+        ui.add_space(Self::INTERNAL_SPACE);
+        ui.separator();
+    }
 
     pub fn render_new_log(&self, ui: &mut eframe::egui::Ui) {
         ui.add_space(Self::INTERNAL_SPACE);
@@ -504,7 +633,7 @@ impl Bellatrix {
                 let title = format!("{}: {}", element.date, "Buy 12323 TKM - 0.23 BNB");
                 ui.colored_label(Color32::DARK_RED, title);
 
-                ui.style_mut().visuals.hyperlink_color = CYAN;
+                ui.style_mut().visuals.hyperlink_color = Color32::DARK_RED;
                 // ui.add_space(PADDING);
                 ui.with_layout(Layout::right_to_left(), |ui| {
                     ui.add(Hyperlink::from_label_and_url(

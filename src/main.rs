@@ -3,83 +3,22 @@ mod utils;
 use eframe::epi;
 
 use crate::bellatrix::Bellatrix;
-use eframe::egui::{
-    self, Color32, Context, Hyperlink, Label, RichText, Separator, Slider, TextStyle,
-    TopBottomPanel, Ui, Vec2, Visuals,
-};
+use eframe::egui::{self, Context, Separator, TopBottomPanel, Ui, Vec2, Visuals};
 use std::env;
 
 pub const PADDING: f32 = 5.0;
-const WHITE: Color32 = Color32::from_rgb(255, 255, 255);
-const CYAN: Color32 = Color32::from_rgb(0, 255, 255);
-
-fn render_footer(ctx: &Context) {
-    TopBottomPanel::bottom("footer").show(ctx, |ui| {
-        ui.vertical_centered(|ui| {
-            ui.add_space(10.);
-            render_monospaced_label(ui, "Made with ♥ By Cau1dr0n 1ake");
-            render_monospaced_label(ui, "Donate: 0x43aF68DcC19Bbce20F3354F31Bc1159f651643aE");
-            render_hyperlink(ui, "https://domain.com", "Buy API KEY");
-            ui.add_space(10.);
-        })
-    });
-}
-
-fn render_monospaced_label(ui: &mut Ui, text: &str) {
-    ui.add(Label::new(
-        RichText::new(text)
-            .color(WHITE)
-            .heading()
-            .text_style(TextStyle::Monospace)
-            .size(30.0),
-    ));
-}
-
-fn render_hyperlink(ui: &mut Ui, url: &str, label: &str) {
-    ui.add(Hyperlink::from_label_and_url(label, url));
-}
-
-fn render_separator(ui: &mut Ui, amount: f32, spacing: f32) {
-    ui.add_space(amount);
-    let sep = Separator::default().spacing(spacing);
-    ui.add(sep);
-}
-
-fn render_header(ui: &mut Ui) {
-    ui.vertical_centered(|ui| {
-        ui.add(Label::new(
-            RichText::new("Account Info").color(WHITE).heading(),
-        ));
-
-        ui.label("");
-
-        ui.vertical_centered(|ui2| {
-            ui2.label("0xa2F9...1b3E");
-            ui2.label("Balance: 1.233");
-        });
-    });
-
-    render_separator(ui, PADDING, 20.);
-}
 
 impl epi::App for Bellatrix {
-    fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
-        // TODO(elsuizo:2022-02-26): add more Options for this panel
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            // The top panel is often a good place for a menu bar:
-            egui::menu::bar(ui, |ui| {
-                ui.menu_button("File", |ui| {
-                    if ui.button("Quit").clicked() {
-                        frame.quit();
-                    }
-                });
-            });
-        });
-
+    fn update(&mut self, ctx: &Context, frame: &epi::Frame) {
+        // NOTE(elsuizo:2022-03-18): teniendo todos las partes principales de la UI separadas cada
+        // una con un metodo hace que sea mas facil cuando queremos "apagar" alguna de las partes
+        // simplemente comentando esa linea de codigo
         egui::CentralPanel::default().show(ctx, |ui| {
-            render_header(ui);
+            self.render_top_panel(ui, ctx, frame);
 
-            render_footer(ctx);
+            self.render_header(ui);
+
+            self.render_footer(ui, ctx);
 
             self.render_wallet_section(ui);
 
@@ -87,24 +26,24 @@ impl epi::App for Bellatrix {
 
             self.render_middle_section(ui);
 
-            self.render_token_wallet_section(ui);
+            // TODO(elsuizo:2022-03-18): esta seccion la dejamos para mas adelante
+            // self.render_token_wallet_section(ui);
+
+            self.render_take_profit_section(ui);
 
             self.render_tracking_information_section(ui);
 
-            // self.font_id_ui(ui);
+            self.render_activate_stop_section(ui);
 
+            // TODO(elsuizo:2022-03-18): esto es el intento para cambiar las fuentes de tamanio
+            // self.font_id_ui(ui);
             egui::warn_if_debug_build(ui);
         });
     }
 
-    fn setup(
-        &mut self,
-        ctx: &egui::Context,
-        _frame: &epi::Frame,
-        _storage: Option<&dyn epi::Storage>,
-    ) {
+    fn setup(&mut self, ctx: &Context, _frame: &epi::Frame, _storage: Option<&dyn epi::Storage>) {
         // NOTE(elsuizo:2022-03-06): una manera de agrandar la fuente parece que puede ser esta...
-        // ctx.set_pixels_per_point(1.2);
+        // ctx.set_pixels_per_point(1.7);
         // enable dark mode
         ctx.request_repaint();
         ctx.set_visuals(Visuals::dark());
@@ -135,6 +74,6 @@ fn main() {
         &env::var("PRIVATE_TEST_KEY").unwrap(),
     );
     let mut native_options = eframe::NativeOptions::default();
-    native_options.initial_window_size = Some(Vec2::new(100.0, 100.0));
+    native_options.initial_window_size = Some(Vec2::new(500.0, 500.0));
     eframe::run_native(Box::new(app), native_options);
 }
