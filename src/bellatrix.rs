@@ -83,15 +83,15 @@ impl Web3Wrapper {
 #[derive(Debug, Default)]
 pub struct User {
     /// address of the user and a flag to signaling is set correctly
-    pub wallet_address: (String, bool),
+    pub wallet_address: String,
     /// private key of the user and a flag to signaling is set correctly
-    pub private_key: (String, bool),
+    pub private_key: String,
     /// balance of the user
     balance: U256,
     /// cryptocurrency address
-    crypto_address: (String, bool),
+    crypto_address: String,
     /// contract to buy address
-    contract_address: (String, bool),
+    contract_address: String,
 
     take_profit: f32,
 
@@ -144,6 +144,8 @@ pub struct Bellatrix {
     pub web3m_wrapper: Web3Wrapper,
 
     pub state: bool,
+
+    pub inputs: (bool, bool, bool),
 }
 
 impl Bellatrix {
@@ -158,6 +160,10 @@ impl Bellatrix {
     const GOOD_ADDRESS_COLOR: Color32 = Color32::from_rgb(0, 255, 0);
     const VALID_ADDRESS_LENGTH: usize = 42;
     const VALID_PRIVATE_KEY_LENGTH: usize = 64;
+
+    pub fn check_inputs(&self) -> bool {
+        self.inputs.0 && self.inputs.1 && self.inputs.2
+    }
 
     pub fn configure_fonts(&mut self, ctx: &Context) {
         let mut font_definitions = FontDefinitions::default();
@@ -201,6 +207,7 @@ impl Bellatrix {
             tracking_information: TrackingInformation::default(),
             web3m_wrapper: Default::default(),
             state: false,
+            inputs: Default::default(),
         }
     }
 
@@ -215,7 +222,7 @@ impl Bellatrix {
             ));
 
             ui.vertical_centered(|ui2| {
-                ui2.label(format!("{}", self.user.wallet_address.0));
+                ui2.label(format!("{}", self.user.wallet_address));
                 ui2.label(format!("Balance: {}", utils::wei_to_eth(self.user.balance)));
             });
         });
@@ -248,7 +255,7 @@ impl Bellatrix {
     pub fn render_activate_stop_section(&mut self, ui: &mut eframe::egui::Ui) {
         ui.add_space(Self::INTERNAL_SPACE);
 
-        ui.horizontal(|ui| {
+        ui.vertical_centered(|ui| {
             ui.add(Label::new(
                 RichText::new("STOP / START")
                     .color(Color32::WHITE)
@@ -256,7 +263,6 @@ impl Bellatrix {
             ));
             ui.add(utils::toggle(&mut self.state));
         });
-
         ui.add_space(Self::INTERNAL_SPACE);
         ui.separator();
     }
@@ -334,21 +340,21 @@ impl Bellatrix {
             ui.label("Address:");
             // TODO(elsuizo:2022-02-25): validate the input
             let address_input = ui
-                .text_edit_singleline(&mut self.user.wallet_address.0)
+                .text_edit_singleline(&mut self.user.wallet_address)
                 .on_hover_text("write a valid address here");
 
             if address_input.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
                 if utils::validate_address_length(
-                    &self.user.wallet_address.0,
+                    &self.user.wallet_address,
                     Self::VALID_ADDRESS_LENGTH,
                 ) {
-                    self.user.wallet_address.1 = true;
+                    self.inputs.0 = true;
                 } else {
-                    self.user.wallet_address.1 = false;
+                    self.inputs.0 = false;
                 }
             }
             // render the validation feedback message
-            if self.user.wallet_address.1 {
+            if self.inputs.0 {
                 ui.add(good_address);
             } else {
                 ui.add(bad_address);
@@ -370,21 +376,21 @@ impl Bellatrix {
         ui.horizontal(|ui| {
             ui.label("PrivateKey: ");
             // TODO(elsuizo:2022-02-25): validate the password
-            let password_input = utils::password_ui(ui, &mut self.user.private_key.0)
+            let password_input = utils::password_ui(ui, &mut self.user.private_key)
                 .on_hover_text("write the private key here");
             // render the validation feedback message
             if ui.input().key_pressed(egui::Key::Enter) {
                 if utils::validate_address_length(
-                    &self.user.private_key.0,
+                    &self.user.private_key,
                     Self::VALID_PRIVATE_KEY_LENGTH,
                 ) {
-                    self.user.private_key.1 = true;
+                    self.inputs.1 = true;
                 } else {
-                    self.user.private_key.1 = false;
+                    self.inputs.1 = false;
                 }
             }
             // render the validation feedback message
-            if self.user.private_key.1 {
+            if self.inputs.1 {
                 ui.add(good_private_key);
             } else {
                 ui.add(bad_private_key);
@@ -414,7 +420,7 @@ impl Bellatrix {
         ui.horizontal(|ui| {
             ui.label("From(Address):");
             // TODO(elsuizo:2022-02-25): validate the address
-            let address_input = ui.text_edit_singleline(&mut self.user.wallet_address.0);
+            let address_input = ui.text_edit_singleline(&mut self.user.wallet_address);
             if ui.button("Accept").clicked() {
                 println!("address input");
             }
@@ -425,7 +431,7 @@ impl Bellatrix {
             ui.label("To Token contract:");
             // TODO(elsuizo:2022-02-25): validate the address
             let address_input = ui
-                .text_edit_singleline(&mut self.user.crypto_address.0)
+                .text_edit_singleline(&mut self.user.crypto_address)
                 .on_hover_text("write the address here");
             // TODO(elsuizo:2022-02-26): if orange color(Windows) / Scam(Macbook) is a signal check
             // before buying
@@ -615,7 +621,7 @@ impl Bellatrix {
 
         ui.horizontal(|ui| {
             // TODO(elsuizo:2022-02-25): validate the address
-            let address_input = ui.text_edit_singleline(&mut self.user.wallet_address.0);
+            let address_input = ui.text_edit_singleline(&mut self.user.wallet_address);
             if ui.button(" ⎆ ").clicked() {
                 println!("Check output transaction and warning users");
             }

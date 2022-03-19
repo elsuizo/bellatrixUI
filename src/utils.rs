@@ -74,7 +74,7 @@ pub fn render_separator(ui: &mut Ui, amount: f32, spacing: f32) {
 /// Here is the same code again, but a bit more compact:
 #[allow(dead_code)]
 pub fn toggle_ui_compact(ui: &mut egui::Ui, on: &mut bool) -> egui::Response {
-    let desired_size = ui.spacing().interact_size.y * egui::vec2(2.0, 1.0);
+    let desired_size = ui.spacing().interact_size.y * egui::vec2(3.0, 2.0);
     let (rect, mut response) = ui.allocate_exact_size(desired_size, egui::Sense::click());
     if response.clicked() {
         *on = !*on;
