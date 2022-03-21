@@ -2,9 +2,14 @@ mod bellatrix;
 mod utils;
 use eframe::epi;
 
-use crate::bellatrix::Bellatrix;
+use crate::bellatrix::{Bellatrix, Msg, Web3Wrapper};
 use eframe::egui::{self, Context, Separator, TopBottomPanel, Ui, Vec2, Visuals};
-use std::env;
+use std::sync::mpsc;
+// use std::env;
+use std::{
+    sync::mpsc::{channel, sync_channel},
+    thread,
+};
 
 pub const PADDING: f32 = 5.0;
 
@@ -35,19 +40,22 @@ impl epi::App for Bellatrix {
 
             self.render_activate_stop_section(ui);
 
+            self.render_new_log(ui);
             // TODO(elsuizo:2022-03-18): esto es el intento para cambiar las fuentes de tamanio
             // self.font_id_ui(ui);
             egui::warn_if_debug_build(ui);
         });
     }
 
-    fn setup(&mut self, ctx: &Context, _frame: &epi::Frame, _storage: Option<&dyn epi::Storage>) {
+    fn setup(&mut self, ctx: &Context, frame: &epi::Frame, _storage: Option<&dyn epi::Storage>) {
         // NOTE(elsuizo:2022-03-06): una manera de agrandar la fuente parece que puede ser esta...
         // ctx.set_pixels_per_point(1.7);
         // enable dark mode
         ctx.request_repaint();
         ctx.set_visuals(Visuals::dark());
         // self.configure_fonts(ctx);
+
+        // let (tx, rx) = mpsc::channel();
 
         // TODO(elsuizo:2022-03-04): parece que esto no anda ...
         #[cfg(feature = "persistence")]

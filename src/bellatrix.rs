@@ -1,12 +1,29 @@
 use crate::egui::{
     self, Color32, Context, FontData, FontDefinitions, FontFamily, Hyperlink, Label, Layout,
-    RichText, Slider, TextStyle, TopBottomPanel,
+    RichText, ScrollArea, Slider, TextStyle, TopBottomPanel,
 };
 use crate::utils;
 use eframe::epi;
 use std::borrow::Cow;
+use std::sync::mpsc::{Receiver, SyncSender};
 use web3::types::{Address, H160, U256};
 use web3_rust_wrapper::Web3Manager;
+
+use std::{
+    sync::mpsc::{channel, sync_channel},
+    thread,
+};
+
+/// load the user with the wallet address and the private key
+pub fn load(mut web3: Web3Wrapper, plain_address: &str, private_key: &str) {
+    async_std::task::block_on(async {
+        web3.web3m.load_account(&plain_address, &private_key).await;
+    })
+}
+
+pub enum Msg {
+    UserData(String, String),
+}
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum TokenPool {
@@ -59,7 +76,7 @@ pub struct BotLog {
 
 // #[derive(Debug)]
 pub struct Web3Wrapper {
-    web3m: Web3Manager,
+    pub web3m: Web3Manager,
 }
 
 impl Default for Web3Wrapper {
@@ -146,6 +163,8 @@ pub struct Bellatrix {
     pub state: bool,
 
     pub inputs: (bool, bool, bool),
+
+    pub app_tx: Option<SyncSender<Msg>>,
 }
 
 impl Bellatrix {
@@ -162,7 +181,7 @@ impl Bellatrix {
     const VALID_PRIVATE_KEY_LENGTH: usize = 64;
 
     pub fn check_inputs(&self) -> bool {
-        self.inputs.0 && self.inputs.1 && self.inputs.2
+        self.inputs.0 && self.inputs.1
     }
 
     pub fn configure_fonts(&mut self, ctx: &Context) {
@@ -208,6 +227,7 @@ impl Bellatrix {
             web3m_wrapper: Default::default(),
             state: false,
             inputs: Default::default(),
+            app_tx: None,
         }
     }
 
@@ -228,16 +248,6 @@ impl Bellatrix {
         });
 
         ui.add_space(Self::INTERNAL_SPACE);
-    }
-
-    pub fn load(&mut self, plain_address: &str, private_key: &str) {
-        // only load if the address and the private key are valid
-        async_std::task::block_on(async {
-            self.web3m_wrapper
-                .web3m
-                .load_account(plain_address, private_key)
-                .await;
-        })
     }
 
     // TODO(elsuizo:2022-03-06): esto no anda
@@ -661,23 +671,31 @@ impl Bellatrix {
         ui.separator();
     }
 
+    // pub fn render_bot_logs(&self, ui: &mut eframe::egui::Ui) {}
+
+    // TODO(elsuizo:2022-03-20): ver bien como hay que hacer el scroll para que aparezca solo el
+    // ultimo valor visible y los otros vayan pasando a un scroll
     pub fn render_new_log(&self, ui: &mut eframe::egui::Ui) {
         ui.add_space(Self::INTERNAL_SPACE);
+        let row_height = 1.0;
+        let total_rows = 100;
 
-        for element in &self.logs {
-            ui.horizontal(|ui| {
-                let title = format!("{}: {}", element.date, "Buy 12323 TKM - 0.23 BNB");
-                ui.colored_label(Color32::DARK_RED, title);
-
-                ui.style_mut().visuals.hyperlink_color = Color32::DARK_RED;
-                // ui.add_space(PADDING);
-                ui.with_layout(Layout::right_to_left(), |ui| {
-                    ui.add(Hyperlink::from_label_and_url(
-                        &element.text,
-                        "See Tx On Explorer ⤴",
-                    ));
-                });
-            });
-        }
+        // TODO(elsuizo:2022-03-20): faltaria calcular bien el parametro `max_height` que es el que
+        // maneja el tamanio que se ve del ScrollArea
+        ui.vertical_centered(|ui| {
+            egui::ScrollArea::vertical().max_height(10.0).show_rows(
+                ui,
+                row_height,
+                total_rows,
+                |ui, row_range| {
+                    for row in row_range {
+                        let text = format!("BotLog here!!! ---> {}/{}", row + 1, total_rows);
+                        ui.label(egui::RichText::new(text).size(20.0).color(Color32::WHITE));
+                    }
+                },
+            );
+        });
+        ui.add_space(Self::INTERNAL_SPACE);
+        ui.separator();
     }
 }
