@@ -1,8 +1,9 @@
 mod bellatrix;
+mod user;
 mod utils;
 use eframe::epi;
 
-use crate::bellatrix::{Bellatrix, Msg, Web3Wrapper};
+use crate::bellatrix::{load, Bellatrix, Msg, Web3Wrapper};
 use eframe::egui::{self, Context, Separator, TopBottomPanel, Ui, Vec2, Visuals};
 use std::sync::mpsc;
 // use std::env;
@@ -25,7 +26,7 @@ impl epi::App for Bellatrix {
 
             self.render_footer(ui, ctx);
 
-            self.render_wallet_section(ui);
+            // self.render_wallet_section(ui);
 
             self.render_addres_section(ui);
 
@@ -76,11 +77,12 @@ impl epi::App for Bellatrix {
 
 fn main() {
     dotenv::dotenv().ok();
-    let app = bellatrix::Bellatrix::new();
-    // app.load(
-    //     &env::var("ACCOUNT_ADDRESS").unwrap(),
-    //     &env::var("PRIVATE_TEST_KEY").unwrap(),
-    // );
+    let mut app = bellatrix::Bellatrix::new();
+    load(
+        &mut app.web3m_wrapper,
+        app.user.config.get_wallet_address(),
+        app.user.config.get_private_key(),
+    );
     let mut native_options = eframe::NativeOptions::default();
     native_options.initial_window_size = Some(Vec2::new(500.0, 500.0));
     eframe::run_native(Box::new(app), native_options);

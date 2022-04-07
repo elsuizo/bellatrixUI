@@ -243,6 +243,7 @@ version = "0.1.0"
 dependencies = [
  "async-std",
  "chrono",
+ "confy",
  "dotenv",
  "eframe",
  "serde",
@@ -501,6 +502,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "30ed07550be01594c6026cff2a1d7fe9c8f683caa798e12b68694ac9e88286a3"
 dependencies = [
  "cache-padded",
+]
+
+[[package]]
+name = "confy"
+version = "0.4.0"
+source = "git+https://github.com/rust-cli/confy#642822413139ce38a96b916190e8c7fd5b88e814"
+dependencies = [
+ "directories-next",
+ "serde",
+ "thiserror",
+ "toml",
 ]
 
 [[package]]

@@ -2,9 +2,10 @@ use crate::egui::{
     self, Color32, Context, FontData, FontDefinitions, FontFamily, Hyperlink, Label, Layout,
     RichText, ScrollArea, Slider, TextStyle, TopBottomPanel,
 };
+use crate::user::{User, UserConfig};
 use crate::utils;
 use eframe::epi;
-use std::borrow::Cow;
+// use std::borrow::Cow;
 use std::sync::mpsc::{Receiver, SyncSender};
 use web3::types::{Address, H160, U256};
 use web3_rust_wrapper::Web3Manager;
@@ -15,7 +16,7 @@ use std::{
 };
 
 /// load the user with the wallet address and the private key
-pub fn load(mut web3: Web3Wrapper, plain_address: &str, private_key: &str) {
+pub fn load(web3: &mut Web3Wrapper, plain_address: &str, private_key: &str) {
     async_std::task::block_on(async {
         web3.web3m.load_account(&plain_address, &private_key).await;
     })
@@ -51,6 +52,7 @@ impl Default for BNBElection {
     }
 }
 
+/// Como puede ser que ande mejor que con neovim
 #[derive(Debug, PartialEq, Clone)]
 pub enum TrackingInformation {
     BscCode,
@@ -97,36 +99,33 @@ impl Web3Wrapper {
 
 // TODO(elsuizo:2022-03-18): mover esto a un archivo `user.rs`
 // TODO(elsuizo:2022-03-18): hacer los getters y setters para este type
-#[derive(Debug, Default)]
-pub struct User {
-    /// address of the user and a flag to signaling is set correctly
-    pub wallet_address: String,
-    /// private key of the user and a flag to signaling is set correctly
-    pub private_key: String,
-    /// balance of the user
-    balance: U256,
-    /// cryptocurrency address
-    crypto_address: String,
-    /// contract to buy address
-    contract_address: String,
-
-    take_profit: f32,
-
-    stop_loss: f32,
-
-    gas_limit: f32,
-
-    slippage: f32,
-    // this how you opt-out of serialization of a member
-    #[cfg_attr(feature = "persistence", serde(skip))]
-    pub force_buy_percent: f32,
-
-    #[cfg_attr(feature = "persistence", serde(skip))]
-    pub force_sell_percent: f32,
-
-    #[cfg_attr(feature = "persistence", serde(skip))]
-    pub auto_swap: bool,
-}
+// #[derive(Debug, Default)]
+// pub struct User {
+//     /// address of the user and a flag to signaling is set correctly
+//     pub wallet_address: String,
+//     /// private key of the user and a flag to signaling is set correctly
+//     pub private_key: String,
+//     /// balance of the user
+//     balance: U256,
+//     /// cryptocurrency address
+//     crypto_address: String,
+//     /// contract to buy address
+//     contract_address: String,
+//
+//     take_profit: f32,
+//
+//     stop_loss: f32,
+//
+//     gas_limit: f32,
+//
+//     slippage: f32,
+//
+//     pub force_buy_percent: f32,
+//
+//     pub force_sell_percent: f32,
+//
+//     pub auto_swap: bool,
+// }
 
 //-------------------------------------------------------------------------
 //                        UI code
@@ -213,7 +212,7 @@ impl Bellatrix {
             tx_hash: format!("{}", a),
         });
         Bellatrix {
-            user: Default::default(),
+            user: User::new(),
             gas_limit_input: Default::default(),
             gas_price_input: Default::default(),
             font_id: Default::default(),
@@ -242,7 +241,7 @@ impl Bellatrix {
             ));
 
             ui.vertical_centered(|ui2| {
-                ui2.label(format!("{}", self.user.wallet_address));
+                ui2.label(format!("{}", self.user.config.get_wallet_address()));
                 ui2.label(format!("Balance: {}", utils::wei_to_eth(self.user.balance)));
             });
         });
@@ -320,6 +319,23 @@ impl Bellatrix {
                         frame.quit();
                     }
                 });
+                // save button
+                ui.menu_button("save", |ui| {
+                    if ui.button("save parameters").clicked() {
+                        confy::store(
+                            "bellatrix",
+                            UserConfig::new(
+                                self.user.config.get_wallet_address().to_string(),
+                                self.user.config.get_private_key().to_string(),
+                                self.user.config.get_take_profit(),
+                                self.user.config.get_stop_loss(),
+                                self.user.config.get_gas_limit(),
+                                self.user.config.get_slippage(),
+                            ),
+                        )
+                        .unwrap()
+                    }
+                });
             });
         });
 
@@ -329,88 +345,88 @@ impl Bellatrix {
     }
 
     /// render the wallet section
-    pub fn render_wallet_section(&mut self, ui: &mut eframe::egui::Ui) {
-        ui.add_space(Self::INTERNAL_SPACE + 20.0);
-
-        // NOTE(elsuizo:2022-03-08): con frame == false lo que hace es no renderizar al boton en si
-        // sino que hace que parezca un Label
-        // validation feedback for the user
-        let good_address = egui::Button::new(
-            egui::RichText::new(" ✔ ".to_string()).color(Self::GOOD_ADDRESS_COLOR),
-        )
-        .frame(false);
-        let bad_address = egui::Button::new(
-            egui::RichText::new(" 🗙 ".to_string()).color(Self::ERROR_ADDRESS_COLOR),
-        )
-        .frame(false);
-
-        // TODO(elsuizo:2022-03-08): hay que ponerle mas size a estos dos campos(porque no llega a
-        // renderizar una address completa osea deja caracteres afuera)
-        ui.horizontal(|ui| {
-            ui.label("Address:");
-            // TODO(elsuizo:2022-02-25): validate the input
-            let address_input = ui
-                .text_edit_singleline(&mut self.user.wallet_address)
-                .on_hover_text("write a valid address here");
-
-            if address_input.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
-                if utils::validate_address_length(
-                    &self.user.wallet_address,
-                    Self::VALID_ADDRESS_LENGTH,
-                ) {
-                    self.inputs.0 = true;
-                } else {
-                    self.inputs.0 = false;
-                }
-            }
-            // render the validation feedback message
-            if self.inputs.0 {
-                ui.add(good_address);
-            } else {
-                ui.add(bad_address);
-                ui.add(egui::widgets::Spinner::new());
-            }
-        });
-
-        ui.add_space(Self::INTERNAL_SPACE);
-
-        let good_private_key = egui::Button::new(
-            egui::RichText::new(" ✔ ".to_string()).color(Self::GOOD_ADDRESS_COLOR),
-        )
-        .frame(false);
-        let bad_private_key = egui::Button::new(
-            egui::RichText::new(" 🗙 ".to_string()).color(Self::ERROR_ADDRESS_COLOR),
-        )
-        .frame(false);
-
-        ui.horizontal(|ui| {
-            ui.label("PrivateKey: ");
-            // TODO(elsuizo:2022-02-25): validate the password
-            let password_input = utils::password_ui(ui, &mut self.user.private_key)
-                .on_hover_text("write the private key here");
-            // render the validation feedback message
-            if ui.input().key_pressed(egui::Key::Enter) {
-                if utils::validate_address_length(
-                    &self.user.private_key,
-                    Self::VALID_PRIVATE_KEY_LENGTH,
-                ) {
-                    self.inputs.1 = true;
-                } else {
-                    self.inputs.1 = false;
-                }
-            }
-            // render the validation feedback message
-            if self.inputs.1 {
-                ui.add(good_private_key);
-            } else {
-                ui.add(bad_private_key);
-                ui.add(egui::widgets::Spinner::new());
-            }
-        });
-
-        ui.add_space(Self::INTERNAL_SPACE);
-        ui.separator();
-    }
+    // pub fn render_wallet_section(&mut self, ui: &mut eframe::egui::Ui) {
+    //     ui.add_space(Self::INTERNAL_SPACE + 20.0);
+    //
+    //     // NOTE(elsuizo:2022-03-08): con frame == false lo que hace es no renderizar al boton en si
+    //     // sino que hace que parezca un Label
+    //     // validation feedback for the user
+    //     let good_address = egui::Button::new(
+    //         egui::RichText::new(" ✔ ".to_string()).color(Self::GOOD_ADDRESS_COLOR),
+    //     )
+    //     .frame(false);
+    //     let bad_address = egui::Button::new(
+    //         egui::RichText::new(" 🗙 ".to_string()).color(Self::ERROR_ADDRESS_COLOR),
+    //     )
+    //     .frame(false);
+    //
+    //     // TODO(elsuizo:2022-03-08): hay que ponerle mas size a estos dos campos(porque no llega a
+    //     // renderizar una address completa osea deja caracteres afuera)
+    //     ui.horizontal(|ui| {
+    //         ui.label("Address:");
+    //         // TODO(elsuizo:2022-02-25): validate the input
+    //         let address_input = ui
+    //             .text_edit_singleline(&mut self.user.wallet_address)
+    //             .on_hover_text("write a valid address here");
+    //
+    //         if address_input.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
+    //             if utils::validate_address_length(
+    //                 &self.user.wallet_address,
+    //                 Self::VALID_ADDRESS_LENGTH,
+    //             ) {
+    //                 self.inputs.0 = true;
+    //             } else {
+    //                 self.inputs.0 = false;
+    //             }
+    //         }
+    //         // render the validation feedback message
+    //         if self.inputs.0 {
+    //             ui.add(good_address);
+    //         } else {
+    //             ui.add(bad_address);
+    //             ui.add(egui::widgets::Spinner::new());
+    //         }
+    //     });
+    //
+    //     ui.add_space(Self::INTERNAL_SPACE);
+    //
+    //     let good_private_key = egui::Button::new(
+    //         egui::RichText::new(" ✔ ".to_string()).color(Self::GOOD_ADDRESS_COLOR),
+    //     )
+    //     .frame(false);
+    //     let bad_private_key = egui::Button::new(
+    //         egui::RichText::new(" 🗙 ".to_string()).color(Self::ERROR_ADDRESS_COLOR),
+    //     )
+    //     .frame(false);
+    //
+    //     ui.horizontal(|ui| {
+    //         ui.label("PrivateKey: ");
+    //         // TODO(elsuizo:2022-02-25): validate the password
+    //         let password_input = utils::password_ui(ui, &mut self.user.private_key)
+    //             .on_hover_text("write the private key here");
+    //         // render the validation feedback message
+    //         if ui.input().key_pressed(egui::Key::Enter) {
+    //             if utils::validate_address_length(
+    //                 &self.user.private_key,
+    //                 Self::VALID_PRIVATE_KEY_LENGTH,
+    //             ) {
+    //                 self.inputs.1 = true;
+    //             } else {
+    //                 self.inputs.1 = false;
+    //             }
+    //         }
+    //         // render the validation feedback message
+    //         if self.inputs.1 {
+    //             ui.add(good_private_key);
+    //         } else {
+    //             ui.add(bad_private_key);
+    //             ui.add(egui::widgets::Spinner::new());
+    //         }
+    //     });
+    //
+    //     ui.add_space(Self::INTERNAL_SPACE);
+    //     ui.separator();
+    // }
 
     pub fn render_addres_section(&mut self, ui: &mut eframe::egui::Ui) {
         ui.add_space(Self::INTERNAL_SPACE);
@@ -430,7 +446,7 @@ impl Bellatrix {
         ui.horizontal(|ui| {
             ui.label("From(Address):");
             // TODO(elsuizo:2022-02-25): validate the address
-            let address_input = ui.text_edit_singleline(&mut self.user.wallet_address);
+            let address_input = ui.text_edit_singleline(&mut self.user.contract_address);
             if ui.button("Accept").clicked() {
                 println!("address input");
             }
@@ -631,7 +647,7 @@ impl Bellatrix {
 
         ui.horizontal(|ui| {
             // TODO(elsuizo:2022-02-25): validate the address
-            let address_input = ui.text_edit_singleline(&mut self.user.wallet_address);
+            let address_input = ui.text_edit_singleline(&mut self.user.contract_address);
             if ui.button(" ⎆ ").clicked() {
                 println!("Check output transaction and warning users");
             }
@@ -645,26 +661,35 @@ impl Bellatrix {
         ui.add_space(Self::INTERNAL_SPACE);
 
         ui.horizontal(|ui| {
+            // take_profit slider
+            let mut take_profit = self.user.config.get_take_profit();
             ui.label("Take profit");
             ui.add(
-                egui::Slider::new(&mut self.user.take_profit, 0.0f32..=100.0f32)
+                egui::Slider::new(&mut take_profit, 0.0..=100.0)
                     // .text("put text here")
                     .suffix(" ％"),
             );
+            self.user.config.set_take_profit(take_profit);
 
+            // stop loss slider
             ui.label("Stop loss");
+            let mut stop_loss = self.user.config.get_stop_loss();
             ui.add(
-                egui::Slider::new(&mut self.user.stop_loss, 0.0..=100.0)
+                egui::Slider::new(&mut stop_loss, 0.0..=100.0)
                     // .text("put text here")
                     .suffix(" ％"),
             );
+            self.user.config.set_stop_loss(stop_loss);
 
+            // slippage slider
             ui.label("Slippage");
+            let mut slippage = self.user.config.get_slippage();
             ui.add(
-                egui::Slider::new(&mut self.user.slippage, 0.0..=100.0)
+                egui::Slider::new(&mut slippage, 0.0..=100.0)
                     // .text("put text here")
                     .suffix(" ％"),
             );
+            self.user.config.set_slippage(slippage);
         });
 
         ui.add_space(Self::INTERNAL_SPACE);

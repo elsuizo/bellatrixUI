@@ -11,9 +11,15 @@ rust-version = "1.56"
 web3 = "0.18.0"
 eframe = {version = "0.17.0", features = ["persistence"]}
 
-serde = { version = "1", features = ["derive"], optional = true }
+serde = { version = "1.0.130", features = ["derive"] }
 
 chrono = "0.4.19"
+# para que la aplicacion tenga un archivo de configuracion
+# NOTE(elsuizo:2022-04-05): cuando querramos hacer que la aplicacion pueda cargar
+# varias configuraciones o dependiendo del usuario(segun su `wallet_address`)
+# tenemos que usar la version `master` porque es la que nos permite eso
+# confy = "0.4.0"
+confy = {git = "https://github.com/rust-cli/confy"}
 
 # web3_rust_wrapper = "0.2.1"
 # web3_rust_wrapper = {version = "0.2.1", path = "../web3helper"}
@@ -27,4 +33,3 @@ async-std = { version = "1.10.0", features = ["tokio1"] }
 
 [features]
 default = []
-persistence = ["eframe/persistence", "serde"] # Enable if you want to persist app state on shutdown
