@@ -18,8 +18,8 @@ chrono = "0.4.19"
 # NOTE(elsuizo:2022-04-05): cuando querramos hacer que la aplicacion pueda cargar
 # varias configuraciones o dependiendo del usuario(segun su `wallet_address`)
 # tenemos que usar la version `master` porque es la que nos permite eso
-# confy = "0.4.0"
-confy = {git = "https://github.com/rust-cli/confy"}
+confy = "0.4.0"
+# confy = {git = "https://github.com/rust-cli/confy"}
 
 # web3_rust_wrapper = "0.2.1"
 # web3_rust_wrapper = {version = "0.2.1", path = "../web3helper"}

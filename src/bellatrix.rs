@@ -14,7 +14,6 @@ use std::{
     sync::mpsc::{channel, sync_channel},
     thread,
 };
-
 /// load the user with the wallet address and the private key
 pub fn load(web3: &mut Web3Wrapper, plain_address: &str, private_key: &str) {
     async_std::task::block_on(async {
@@ -52,7 +51,6 @@ impl Default for BNBElection {
     }
 }
 
-/// Como puede ser que ande mejor que con neovim
 #[derive(Debug, PartialEq, Clone)]
 pub enum TrackingInformation {
     BscCode,
@@ -97,43 +95,12 @@ impl Web3Wrapper {
         "https://speedy-nodes-nyc.moralis.io/84a2745d907034e6d388f8d6/bsc/testnet";
 }
 
-// TODO(elsuizo:2022-03-18): mover esto a un archivo `user.rs`
-// TODO(elsuizo:2022-03-18): hacer los getters y setters para este type
-// #[derive(Debug, Default)]
-// pub struct User {
-//     /// address of the user and a flag to signaling is set correctly
-//     pub wallet_address: String,
-//     /// private key of the user and a flag to signaling is set correctly
-//     pub private_key: String,
-//     /// balance of the user
-//     balance: U256,
-//     /// cryptocurrency address
-//     crypto_address: String,
-//     /// contract to buy address
-//     contract_address: String,
-//
-//     take_profit: f32,
-//
-//     stop_loss: f32,
-//
-//     gas_limit: f32,
-//
-//     slippage: f32,
-//
-//     pub force_buy_percent: f32,
-//
-//     pub force_sell_percent: f32,
-//
-//     pub auto_swap: bool,
-// }
-
 //-------------------------------------------------------------------------
 //                        UI code
 //-------------------------------------------------------------------------
 
 // #[derive(Default)]
 pub struct Bellatrix {
-    /// users
     // users: Vec<User>,
     pub user: User,
 
@@ -159,7 +126,7 @@ pub struct Bellatrix {
 
     pub web3m_wrapper: Web3Wrapper,
 
-    pub state: bool,
+    pub bot_state: bool,
 
     pub inputs: (bool, bool, bool),
 
@@ -174,10 +141,13 @@ impl Bellatrix {
     const ROWS_SPACE: f32 = 10.0;
     const COLUMNS_SPACE: f32 = 10.0;
     const WINDOWS_SIGNAL_COLOR: Color32 = Color32::from_rgb(255, 140, 0);
-    const ERROR_ADDRESS_COLOR: Color32 = Color32::from_rgb(255, 0, 0);
-    const GOOD_ADDRESS_COLOR: Color32 = Color32::from_rgb(0, 255, 0);
-    const VALID_ADDRESS_LENGTH: usize = 42;
-    const VALID_PRIVATE_KEY_LENGTH: usize = 64;
+
+    //-------------------------------------------------------------------------
+    //                        getters
+    //-------------------------------------------------------------------------
+    pub fn get_bot_state(&self) -> bool {
+        self.bot_state
+    }
 
     pub fn check_inputs(&self) -> bool {
         self.inputs.0 && self.inputs.1
@@ -224,7 +194,7 @@ impl Bellatrix {
             token_amount_sell_percent: 0.0,
             tracking_information: TrackingInformation::default(),
             web3m_wrapper: Default::default(),
-            state: false,
+            bot_state: false,
             inputs: Default::default(),
             app_tx: None,
         }
@@ -261,6 +231,9 @@ impl Bellatrix {
         });
     }
 
+    // NOTE(elsuizo: 2022-04-30): tenemos disponible el estado del bot en la variable `bot_state`
+    // la idea seria hacer que cuando cambia de estado iniciar el "bot"
+    // como puede ser que ande mejor que sin la espuma esta de mierda
     pub fn render_activate_stop_section(&mut self, ui: &mut eframe::egui::Ui) {
         ui.add_space(Self::INTERNAL_SPACE);
 
@@ -270,7 +243,8 @@ impl Bellatrix {
                     .color(Color32::WHITE)
                     .heading(),
             ));
-            ui.add(utils::toggle(&mut self.state));
+            let response = utils::toggle(&mut self.bot_state);
+            ui.add(response);
         });
         ui.add_space(Self::INTERNAL_SPACE);
         ui.separator();

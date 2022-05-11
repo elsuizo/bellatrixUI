@@ -7,7 +7,7 @@ use web3::types::U256;
 pub struct User {
     /// user configuration for the app
     pub config: UserConfig,
-    /// blance of the user account
+    /// balance of the user account
     pub balance: U256,
     /// cryptocurrency address
     pub crypto_address: String,

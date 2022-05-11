@@ -6,7 +6,6 @@ use eframe::epi;
 use crate::bellatrix::{load, Bellatrix, Msg, Web3Wrapper};
 use eframe::egui::{self, Context, Separator, TopBottomPanel, Ui, Vec2, Visuals};
 use std::sync::mpsc;
-// use std::env;
 use std::{
     sync::mpsc::{channel, sync_channel},
     thread,
